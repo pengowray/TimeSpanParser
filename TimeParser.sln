@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.27130.2036
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TimeParser", "TimeParser\TimeParser.csproj", "{FDA037C1-7044-40C9-A809-17D2D77B298F}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{FDA037C1-7044-40C9-A809-17D2D77B298F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FDA037C1-7044-40C9-A809-17D2D77B298F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FDA037C1-7044-40C9-A809-17D2D77B298F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FDA037C1-7044-40C9-A809-17D2D77B298F}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {0EBD566E-977A-4325-9A79-C1D3E6AC3125}
+	EndGlobalSection
+EndGlobal
