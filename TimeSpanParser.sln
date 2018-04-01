@@ -3,7 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27130.2036
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TimeParser", "TimeParser\TimeParser.csproj", "{FDA037C1-7044-40C9-A809-17D2D77B298F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TimeSpanParser", "TimeParser\TimeSpanParser.csproj", "{FDA037C1-7044-40C9-A809-17D2D77B298F}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TimeSpanParser.Tests", "TimeParser.Tests\TimeSpanParser.Tests.csproj", "{17452AF9-208A-4190-A033-37789CBB9966}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,10 @@ Global
 		{FDA037C1-7044-40C9-A809-17D2D77B298F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FDA037C1-7044-40C9-A809-17D2D77B298F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FDA037C1-7044-40C9-A809-17D2D77B298F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{17452AF9-208A-4190-A033-37789CBB9966}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{17452AF9-208A-4190-A033-37789CBB9966}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{17452AF9-208A-4190-A033-37789CBB9966}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{17452AF9-208A-4190-A033-37789CBB9966}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
