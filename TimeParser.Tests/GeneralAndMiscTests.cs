@@ -2,9 +2,10 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using TimeSpanParserUtil;
 
-namespace TimeSpanParserTests {
+namespace TimeSpanParserUtil.Tests {
+
     [TestClass]
-    public class UnitTest1 {
+    public class GeneralAndMiscTests {
         [TestMethod]
         public void DehumanizeTimeSpan() {
             // Test roundtripping of Humanizer examples
@@ -25,34 +26,6 @@ namespace TimeSpanParserTests {
                 TimeSpanParser.Parse("2 weeks, 1 day, 1 hour, 30 seconds, 20 milliseconds"));
         }
 
-        [TestMethod]
-        public void NonEnglishDehumanizeTimeSpanDE() {
-            // Test roundtripping of Humanizer examples
-            Assert.AreEqual(
-                TimeSpan.FromDays(1),
-                TimeSpanParser.Parse("Ein Tag"));
-
-            Assert.AreEqual(
-                TimeSpan.FromDays(2),
-                TimeSpanParser.Parse("2 Tage"));
-        }
-
-        [TestMethod]
-        public void NonEnglishDehumanizeTimeSpanSK() {
-            // Test roundtripping of Humanizer examples
-            Assert.AreEqual(
-                TimeSpan.FromMilliseconds(1),
-                TimeSpanParser.Parse("1 milisekunda"));
-
-            Assert.AreEqual(
-                TimeSpan.FromMilliseconds(2),
-                TimeSpanParser.Parse("2 milisekundy"));
-
-            Assert.AreEqual(
-                TimeSpan.FromMilliseconds(5),
-                TimeSpanParser.Parse("5 milisekúnd"));
-
-        }
 
         [TestMethod]
         public void EnglishDehumanizeWords() {

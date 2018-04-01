@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27130.2036
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TimeSpanParser", "TimeParser\TimeSpanParser.csproj", "{FDA037C1-7044-40C9-A809-17D2D77B298F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TimeSpanParserUtil", "TimeParser\TimeSpanParserUtil.csproj", "{FDA037C1-7044-40C9-A809-17D2D77B298F}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TimeSpanParser.Tests", "TimeParser.Tests\TimeSpanParser.Tests.csproj", "{17452AF9-208A-4190-A033-37789CBB9966}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TimeSpanParserUtil.Tests", "TimeParser.Tests\TimeSpanParserUtil.Tests.csproj", "{17452AF9-208A-4190-A033-37789CBB9966}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

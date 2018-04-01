@@ -6,8 +6,8 @@ using System.Text;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TimeSpanParserUtil;
 
-namespace TimeParserTests
-{
+namespace TimeSpanParserUtil.Tests {
+
     [TestClass]
     public class PrefexTests {
 
