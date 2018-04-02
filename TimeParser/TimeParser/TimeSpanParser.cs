@@ -8,9 +8,11 @@ namespace TimeSpanParserUtil {
 
     //Note: Units must be largest to smallest with "None" as the "biggest". 
     //Note: Units must be in strict order for how they'd be parsed in colon-format, i.e. Weeks:Days:Hours:Minutes:Seconds (stops at Milliseconds)
-    //Note: add other units after Milliseconds
+    //Note: add other units after ZeroOnly (or Milliseconds)
     //Do not change to binary flags
-    public enum Units { None, Error, ErrorAmbiguous, Weeks, Days, Hours, Minutes, Seconds, Milliseconds }
+    //TODO: separate ordering error value from other errors (e.g. null)
+    // SplitMe = don't accept this number as it is. Instead add it to the next TimeSpan
+    public enum Units { None, Error, ErrorAmbiguous, Weeks, Days, Hours, Minutes, Seconds, Milliseconds, ErrorTooManyUnits, ZeroOnly, SplitMe }
 
     public class TimeSpanParser {
         public static TimeSpan Parse(string text) {
@@ -103,24 +105,28 @@ namespace TimeSpanParserUtil {
             return _UnitsRegex;
         }
 
-        public static bool TryParseSuffix(string suffix, out Units units) {
+        protected static Units ParseSuffix(string suffix) { // was: TryParseSuffix()
             if (suffix == null) {
-                units = Units.Error;
-                return false;
+                //return Units.Error;
+                throw new ArgumentNullException();
             }
 
             var regex = GetUnitsRegex();
             var match = regex.Match(suffix);
             if (!match.Success) {
-                units = Units.None;
-                return false;
+                return Units.None;
+                //return false;
             }
 
             var dict = GetUnitsDict();
-            units = Units.None;
+            var units = Units.None;
             var success = dict.TryGetValue(match.Groups["units"].Value.ToLowerInvariant(), out units);
-            success = success && units != Units.ErrorAmbiguous && units != Units.Error;
-            return success;
+            //success = success && units != Units.ErrorAmbiguous && units != Units.Error;
+
+            if (!success)
+                return Units.None;
+
+            return units;
         }
 
         public static bool TryParse(string text, out TimeSpan timeSpan) {
@@ -128,6 +134,7 @@ namespace TimeSpanParserUtil {
         }
 
         public static bool TryParse(string text, Units defaultPlain, Units defaultColon, out TimeSpan timeSpan) {
+
             try {
                 TimeSpan[] timeSpans;
                 var success = TryParse(text, defaultPlain, defaultColon, out timeSpans, 1);
@@ -138,12 +145,28 @@ namespace TimeSpanParserUtil {
                 return true;
 
             } catch (Exception e) {
-                //Console.WriteLine($" - exception:'{e}'");
+                Console.WriteLine($" - exception:'{e}'");
                 return false;
             }
         }
 
         public static bool TryParse(string text, Units defaultPlain, Units defaultColon, out TimeSpan[] timeSpans, int max = int.MaxValue) {
+            var options = new TimeSpanParserOptions()
+            {
+                DefaultPlain = defaultPlain,
+                DefaultColon = defaultColon
+            };
+
+            return TryParse(text, out timeSpans, options, max);
+
+        }
+        public static bool TryParse(string text, out TimeSpan[] timeSpans, TimeSpanParserOptions options = null, int max = int.MaxValue) {
+
+            Units[] badDefaults = new Units[] { Units.Error, Units.ErrorTooManyUnits, Units.SplitMe, Units.ErrorAmbiguous };
+            if (badDefaults.Any(bad => options.DefaultPlain == bad) || badDefaults.Any(bad => options.DefaultColon == bad)) {
+                throw new ArgumentException("Bad default selection.");
+            }
+
             //public static bool TryParse(string text, Units defaultPlain, Units defaultColon, out TimeSpan timeSpan) {
 
             //expectedPlain is what to interpret a number as by default. e.g. if seconds, then text of "3" becomes 3 seconds
@@ -186,7 +209,8 @@ namespace TimeSpanParserUtil {
             try {
                 var numberRegex = new Regex(numberRegexStr); // TODO: re-use regex + RegexOptions.Compiled
 
-                TimeSpanBuilder builder = new TimeSpanBuilder(); // TODO: options
+                TimeSpanBuilder builder = new TimeSpanBuilder(options);
+                builder.RemainingTimeSpans = max;
 
                 var matches = numberRegex.Matches(text);
                 for (int i = 0; i < matches.Count; i++) { //  foreach (Match match in matches) {
@@ -201,126 +225,91 @@ namespace TimeSpanParserUtil {
                     string suffix = text.Substring(numberEnd, suffixLength);
                     bool colonishNumber = number.Contains(':');
 
-                    //Console.WriteLine($" - n:'{number}', suffix:'{suffix}'");
+                    Console.WriteLine($" - n:'{number}', suffix:'{suffix}'");
 
-                    var defaultSuffixUnits = colonishNumber ? defaultColon : defaultPlain;
-
-                    Units suffixUnits;
-                    if (TryParseSuffix(suffix, out suffixUnits)) {
-                        // OK 
-                        Console.WriteLine("found units: " + suffixUnits);
-                    } else if (i == 0 && suffixUnits != Units.ErrorAmbiguous) {
-                        suffixUnits = defaultSuffixUnits;
-                        Console.WriteLine("default units: " + suffixUnits);
-                    }
-
-                    if (suffixUnits == Units.Error || suffixUnits == Units.None || suffixUnits == Units.ErrorAmbiguous) {
-                        bool ok = !(defaultSuffixUnits == Units.Error || defaultSuffixUnits == Units.None || suffixUnits == Units.ErrorAmbiguous);
-                        if (!ok) {
-                            //failure: number with no units has no possible default units OR number with ambiguous units
-                            timeSpans = foundTimeSpans.ToArray();
-                            return false;
-
-                        } else {
-                            //TODO: too much code copy/paste
-
-                            //not the first number and we've already used the default units. We'll have to consider it part of the next TimeSpan
-
-                            if (!builder.IsNull) foundTimeSpans.Add(builder.TimeSpan);
-                            builder = new TimeSpanBuilder();
-                            max--;
-                            if (max <= 0) {
-                                timeSpans = foundTimeSpans.ToArray();
-                                return true;
-                            }
-                            suffixUnits = defaultSuffixUnits;
-
-                        }
-                    }
-
-                    //Console.WriteLine($" - unit:'{suffixUnits}'");
+                    Units suffixUnits = ParseSuffix(suffix);
 
                     if (colonishNumber) {
+                        builder.StartParsingColonishNumber();
+
                         var parts = number.Split(':');
                         if (parts.Length <= 0) {
                             timeSpans = foundTimeSpans.ToArray();
                             return false; // something went wrong
                         }
 
-                        var partUnit = suffixUnits;
+                        var partUnit = builder.GetUnitOrDefaultOption(suffixUnits);
+                        Console.WriteLine($"default partUnit: {partUnit}. default colon options: {options.DefaultColon}");
 
-                        if (parts.Length == 4 && partUnit >= Units.Hours && partUnit < Units.Milliseconds ) {
-                            // unit too small, auto adjust
-                            //TODO: give warning, or require AutoAdjust flag?
-                            partUnit = Units.Days; // largest unit we'll AutoAdjust to (i.e. Don't do weeks unless explicit)
-                        } else if (parts.Length == 3 && (partUnit == Units.Minutes || partUnit == Units.Seconds)) {
-                            // unit too small, auto adjust
-                            partUnit = Units.Hours;
-                        } else if (parts.Length == 2 && partUnit == Units.Seconds) {
-                            // unit too small, auto adjust
-                            partUnit = Units.Minutes;
+                        if (options.AutoUnitsIfTooManyColons) {
+                            if (parts.Length == 4 && partUnit >= Units.Hours && partUnit < Units.Milliseconds || partUnit == Units.None) {
+                                // unit too small, auto adjust
+                                partUnit = Units.Days; // largest unit we'll AutoAdjust to (i.e. Don't do weeks unless explicit)
+                            } else if (parts.Length == 3 && (partUnit == Units.Minutes || partUnit == Units.Seconds)) {
+                                // unit too small, auto adjust
+                                partUnit = Units.Hours;
+                            } else if (parts.Length == 2 && partUnit == Units.Seconds) {
+                                // unit too small, auto adjust
+                                partUnit = Units.Minutes;
+                            }
                         }
+
+                        Console.WriteLine($"post AutoUnits: {partUnit}");
 
                         // Weeks, Days, Hours, Minutes, Seconds, Milliseconds
                         foreach (var part in parts) {
-                            if (partUnit == Units.Milliseconds) {
+                            Console.WriteLine($"colon bit: {part} -- {partUnit}" );
+
+                            if (partUnit == Units.ErrorTooManyUnits || partUnit == Units.Milliseconds) {
                                 timeSpans = foundTimeSpans.ToArray();
                                 return false; // too many colons
                             }
 
                             double dPart = 0;
-                            if (!string.IsNullOrWhiteSpace(part) && !double.TryParse(part, out dPart)) {
+                            if (!string.IsNullOrWhiteSpace(part) && !double.TryParse(part, options.NumberStyles, options.FormatProvider, out dPart)) {
                                 timeSpans = foundTimeSpans.ToArray();
                                 return false; // failed to parse number (as double). Empty strings treated as 0.
                             }
-                            bool ok = builder.AddUnit(dPart, partUnit++);
-
-                            if (!ok) {
-                                //return false;
-                                if (!builder.IsNull) foundTimeSpans.Add(builder.TimeSpan);
-                                builder = new TimeSpanBuilder();
-                                max--;
-                                if (max <= 0) {
-                                    timeSpans = foundTimeSpans.ToArray();
-                                    return true;
-                                }
-                                partUnit = suffixUnits;
-                                builder.AddUnit(dPart, partUnit++);
+                            builder = builder.AddUnit(dPart, partUnit);
+                            partUnit = Units.None; // automatically choose future units
+                            if (builder.CompleteTimeSpan != null) {
+                                foundTimeSpans.Add(builder.CompleteTimeSpan.Value);
                             }
+
+
                         }
+                        Console.WriteLine($"done with colon bits");
+                        builder?.EndParsingColonishNumber();
 
                     } else {
-
+                        
                         double parsedNumber;
-                        bool numberSuccess = double.TryParse(number, out parsedNumber);
+                        bool numberSuccess = double.TryParse(number, options.NumberStyles, options.FormatProvider, out parsedNumber);
                         if (!numberSuccess) {
-                            //Console.WriteLine($" - failed to parse number:'{parsedNumber}'");
+                            Console.WriteLine($" - failed to parse number:'{parsedNumber}'");
                             timeSpans = foundTimeSpans.ToArray();
                             return false;
                         }
 
-                        bool ok = builder.AddUnit(parsedNumber, suffixUnits);
-                        if (!ok) {
-                            //return false;
-                            if (!builder.IsNull) foundTimeSpans.Add(builder.TimeSpan);
-                            builder = new TimeSpanBuilder();
-                            max--;
-                            if (max <= 0) {
-                                timeSpans = foundTimeSpans.ToArray();
-                                return true;
-                            }
-                            builder.AddUnit(parsedNumber, suffixUnits);
+                        //bool ok = builder.AddUnit(parsedNumber, suffixUnits);
+                        builder = builder.AddUnit(parsedNumber, suffixUnits);
+                        suffixUnits = Units.None; // automatically choose future units
+                        if (builder.CompleteTimeSpan != null) {
+                            foundTimeSpans.Add(builder.CompleteTimeSpan.Value);
                         }
                     }
                 }
 
-                //timeSpan = builder.TimeSpan;
-                if (!builder.IsNull) foundTimeSpans.Add(builder.TimeSpan);
+                var final = builder?.Final();
+                if (final != null) {
+                        foundTimeSpans.Add(final.Value);
+                }
+                    
                 timeSpans = foundTimeSpans.ToArray();
                 return true;
 
             } catch (Exception e) {
-                //Console.WriteLine($" - exception:'{e}'");
+                Console.WriteLine($" - exception:'{e}'");
                 timeSpans = foundTimeSpans.ToArray();
                 return false;
             }

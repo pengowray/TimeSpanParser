@@ -21,7 +21,6 @@ namespace TimeSpanParserUtil.Tests {
         [DataRow("-0:0:0")]
         [DataRow("-00:00:00")]
         [DataRow("-0:00:00:00")]
-
         public void ZeroTest(string parseThis) {
             var expected = TimeSpan.Zero;
 
@@ -30,6 +29,22 @@ namespace TimeSpanParserUtil.Tests {
 
             Assert.IsTrue(success);
             Assert.AreEqual(expected, actual);
+        }
+
+        [DataRow("-")]
+        [DataRow("")]
+        [DataRow(".")]
+        [DataRow("/")]
+        [DataRow(". . . . .")]
+        [DataRow(null)]
+        public void NothingTest(string parseThis) {
+            //var expected = TimeSpan.Zero;
+
+            TimeSpan actual;
+            bool success = TimeSpanParser.TryParse(parseThis, out actual); ;
+
+            Assert.IsFalse(success);
+            //Assert.AreEqual(expected, actual);
         }
 
         [TestMethod]

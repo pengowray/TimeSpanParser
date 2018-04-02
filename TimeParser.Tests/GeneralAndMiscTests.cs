@@ -39,11 +39,17 @@ namespace TimeSpanParserUtil.Tests {
         [DataRow("32:18:10", "1:08:18:10")]
         [DataRow("32:18h 10s", "1:08:18:10")] // "00:32:18:10"
         [DataRow("2:18h 10s", "2:18:10")]
+        [DataRow("0:0:0.001", "0:0:0.001")]
+        public void LargeColonedNumbers(string parseThis, string equalThis) {
+            var expected = TimeSpan.Parse(equalThis);
+            Assert.AreEqual(expected, TimeSpanParser.Parse(parseThis));
+        }
+
+        [TestMethod]
         [DataRow("8.64e+6 seconds", "100:0:0:0")]
         [DataRow("1 wk", "7:0:0:0")]
         [DataRow("1 ms", "0:0:0.001")]
-        [DataRow("0:0:0.001", "0:0:0.001")]
-        public void CrazyTests(string parseThis, string equalThis) {
+        public void PeculiarNocolonsTest(string parseThis, string equalThis) {
             var expected = TimeSpan.Parse(equalThis);
             Assert.AreEqual(expected, TimeSpanParser.Parse(parseThis));
         }
