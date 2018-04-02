@@ -18,6 +18,10 @@ namespace TimeSpanParserUtil
         // e.g. if true and DefaultColon = Units.Minutes, parse "05:10:30" as "05h10m30s" rather than failing
         public bool AutoUnitsIfTooManyColons = true;
 
+        // "1.12:13" for "1d 12h 13m" (regardless of DefaultColon). 
+        // But won't if already has four parts, e.g. 1.2:20:40:50 (move this to testing docs)
+        public bool AllowDotSeparatedDayHours = true;
+
         //TODO: implement
         // If true, treat :30 the same as 30, and :10:30 the same as 10:30.
         // If false (NYI), treat :30 like 0:30, and :10:30 like 00:10:30
@@ -35,6 +39,7 @@ namespace TimeSpanParserUtil
         public bool DisallowRepeatedUnit = true;
 
         // if true and DisallowRepeatedUnit, disallow "10.5 seconds 200 milliseconds", otherwise treat it like "10.7 seconds"
+        // NYI
         public readonly bool DecimalSecondsCountsAsMilliseconds = true;
 
         // If true, "0" will be parsed as TimeSpan.Zero even if DefaultPlain = Units.None. 

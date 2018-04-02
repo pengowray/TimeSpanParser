@@ -134,10 +134,19 @@ namespace TimeSpanParserUtil {
         }
 
         public static bool TryParse(string text, Units defaultPlain, Units defaultColon, out TimeSpan timeSpan) {
+            var options = new TimeSpanParserOptions()
+            {
+                DefaultPlain = defaultPlain,
+                DefaultColon = defaultColon
+            };
+            return TryParse(text, out timeSpan, options);
+        }
+
+        public static bool TryParse(string text, out TimeSpan timeSpan, TimeSpanParserOptions options = null) {
 
             try {
                 TimeSpan[] timeSpans;
-                var success = TryParse(text, defaultPlain, defaultColon, out timeSpans, 1);
+                var success = TryParse(text, out timeSpans, options, 1);
                 if (!success)
                     return false;
 
@@ -241,7 +250,20 @@ namespace TimeSpanParserUtil {
                         var partUnit = builder.GetUnitOrDefaultOption(suffixUnits);
                         Console.WriteLine($"default partUnit: {partUnit}. default colon options: {options.DefaultColon}");
 
-                        if (options.AutoUnitsIfTooManyColons) {
+                        if (options.AllowDotSeparatedDayHours && parts.Length >= 2 && parts.Length <= 3 && parts[0].Contains('.')) {
+                            var p0 = parts[0];
+                            if (p0.Count(ch => ch == '.') > 1) {
+                                if (p0.TrimEnd('.').Count(ch => ch == '.') > 1) { // last chance.. remove trailing dots
+                                    throw new FormatException("Multiple dots. Don't know where to cut days and hour.");
+                                } else {
+                                    p0 = p0.TrimEnd('.');
+                                }
+                            }
+
+                            parts = p0.Split('.', 2).Concat(parts.Skip(1)).ToArray();
+                            partUnit = Units.Days;
+
+                        } else if (options.AutoUnitsIfTooManyColons) {
                             if (parts.Length == 4 && partUnit >= Units.Hours && partUnit < Units.Milliseconds || partUnit == Units.None) {
                                 // unit too small, auto adjust
                                 partUnit = Units.Days; // largest unit we'll AutoAdjust to (i.e. Don't do weeks unless explicit)
@@ -276,6 +298,7 @@ namespace TimeSpanParserUtil {
                                 foundTimeSpans.Add(builder.CompleteTimeSpan.Value);
                             }
 
+                            Console.WriteLine($"WIP: {builder.TimeSpan}");
 
                         }
                         Console.WriteLine($"done with colon bits");

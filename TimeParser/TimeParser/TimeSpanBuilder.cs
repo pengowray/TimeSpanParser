@@ -203,7 +203,11 @@ namespace TimeSpanParserUtil {
                 timeSpan += TimeSpan.FromMinutes(time);
 
             } else if (unit == Units.Seconds) {
-                timeSpan += TimeSpan.FromSeconds(time);
+                //timeSpan += TimeSpan.FromSeconds(time); // not very accurate, use ticks instead.
+
+                long ticks = (long) (time * 10_000_000);
+                timeSpan += TimeSpan.FromTicks(ticks);
+
                 //TODO: check for Options.DecimalSecondsCountsAsMilliseconds
 
             } else if (unit == Units.Milliseconds) {

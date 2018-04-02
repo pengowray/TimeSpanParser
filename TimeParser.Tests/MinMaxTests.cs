@@ -63,7 +63,8 @@ namespace TimeSpanParserUtil.Tests {
 
         [TestMethod]
         public void MaxTest() {
-            string MaximumTimeSpan = "10675199.02:48:05.4775807";
+            string MaximumTimeSpan = "10675199:02:48:05.4775807";
+            //string MaximumTimeSpan = "10675199.02:48:05.4775807";
 
             var expected1 = TimeSpan.Parse(MaximumTimeSpan);
             var expected2 = TimeSpan.MaxValue;
@@ -76,14 +77,16 @@ namespace TimeSpanParserUtil.Tests {
         }
 
         [TestMethod]
-        public void NearMinTest() {
-            string NearMaximumTimeSpan = "11111111.11:11:11.1111111";
+        public void NearMaxTest() {
+            //string NearMaximumTimeSpan = "111111111:11:11:11.1111111";
+            string NearMaximumTimeSpan = "1111111.11:11:11.1111111";
 
+            var expected = TimeSpan.Parse(NearMaximumTimeSpan);
             TimeSpan actual;
             bool success = TimeSpanParser.TryParse(NearMaximumTimeSpan, out actual); ;
 
             Assert.IsTrue(success);
-            Assert.AreEqual(TimeSpan.MinValue, actual);
+            Assert.AreEqual(expected, actual);
         }
 
         [TestMethod]
