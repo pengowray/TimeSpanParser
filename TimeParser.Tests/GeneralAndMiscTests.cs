@@ -6,6 +6,7 @@ namespace TimeSpanParserUtil.Tests {
 
     [TestClass]
     public class GeneralAndMiscTests {
+
         [TestMethod]
         public void DehumanizeTimeSpan() {
             // Test roundtripping of Humanizer examples

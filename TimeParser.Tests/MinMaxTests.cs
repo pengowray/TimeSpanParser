@@ -23,14 +23,40 @@ namespace TimeSpanParserUtil.Tests {
         [DataRow("-0:00:00:00")]
         public void ZeroTest(string parseThis) {
             var expected = TimeSpan.Zero;
-
-            TimeSpan actual;
-            bool success = TimeSpanParser.TryParse(parseThis, out actual); ;
+            bool success = TimeSpanParser.TryParse(parseThis, out TimeSpan actual); ;
 
             Assert.IsTrue(success);
             Assert.AreEqual(expected, actual);
         }
 
+        [TestMethod]
+        [DataRow("0")]
+        [DataRow("0:00")]
+        [DataRow("0:0:0:0:0:0")]
+        [DataRow("0 0 0 0 0")] // everything after first 0 should be ignored
+        [DataRow("0000.00000000:00.0:0.00:00.00")]
+        public void ZeroOnlyWeirdnessTest(string parseThis) {
+            Console.WriteLine(parseThis);
+
+            var expected = TimeSpan.Zero;
+            bool success = TimeSpanParser.TryParse(parseThis, out TimeSpan actual); ;
+
+            Assert.IsTrue(success);
+            Assert.AreEqual(expected, actual);
+        }
+
+        [TestMethod]
+        [DataRow("0000.00000000:00.0:0.00:00:00:00:.00.1")]
+        [DataRow("0:0:0:0:0:0:2")]
+        public void ZeroOnlyFailTest(string parseThis) {
+            Console.WriteLine(parseThis);
+
+            bool success = TimeSpanParser.TryParse(parseThis, out TimeSpan actual);
+            Assert.IsFalse(success);
+        }
+
+
+        [TestMethod]
         [DataRow("-")]
         [DataRow("")]
         [DataRow(".")]
@@ -38,29 +64,21 @@ namespace TimeSpanParserUtil.Tests {
         [DataRow(". . . . .")]
         [DataRow(null)]
         public void NothingTest(string parseThis) {
-            //var expected = TimeSpan.Zero;
 
-            TimeSpan actual;
-            bool success = TimeSpanParser.TryParse(parseThis, out actual); ;
+            bool success = TimeSpanParser.TryParse(parseThis, out TimeSpan actual); ;
 
             Assert.IsFalse(success);
-            //Assert.AreEqual(expected, actual);
         }
 
         [TestMethod]
         public void MinTest() {
             string MinimumTimeSpan = "-10675199.02:48:05.4775808";
-
-            TimeSpan actual;
-            bool success = TimeSpanParser.TryParse(MinimumTimeSpan, out actual); ;
+            bool success = TimeSpanParser.TryParse(MinimumTimeSpan, out TimeSpan actual); ;
 
             Assert.IsTrue(success);
             Assert.AreEqual(TimeSpan.MinValue, actual);
         }
-
-
-
-
+        
         [TestMethod]
         public void MaxTest() {
             string MaximumTimeSpan = "10675199:02:48:05.4775807";

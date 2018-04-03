@@ -11,8 +11,7 @@ namespace TimeSpanParserUtil {
     //Note: add other units after ZeroOnly (or Milliseconds)
     //Do not change to binary flags
     //TODO: separate ordering error value from other errors (e.g. null)
-    // SplitMe = don't accept this number as it is. Instead add it to the next TimeSpan
-    public enum Units { None, Error, ErrorAmbiguous, Weeks, Days, Hours, Minutes, Seconds, Milliseconds, ErrorTooManyUnits, ZeroOnly, SplitMe }
+    public enum Units { None, Error, ErrorAmbiguous, Weeks, Days, Hours, Minutes, Seconds, Milliseconds, ErrorTooManyUnits, ZeroOnly }
 
     public class TimeSpanParser {
         public static TimeSpan Parse(string text) {
@@ -23,8 +22,16 @@ namespace TimeSpanParserUtil {
             throw new ArgumentException("Failed to parse."); // TODO?
         }
 
-        public static TimeSpan Parse(string text, Units defaultPlain, Units defaultColon) {
-            if (TryParse(text, defaultPlain, defaultColon, out TimeSpan timeSpan)) {
+        public static TimeSpan Parse(string text, TimeSpanParserOptions options) {
+            if (TryParse(text, out TimeSpan timeSpan, options)) {
+                return timeSpan;
+            }
+
+            throw new ArgumentException("Failed to parse."); // TODO?
+        }
+
+        public static TimeSpan Parse(string text, Units uncolonedDefault, Units colonedDefault) {
+            if (TryParse(text, uncolonedDefault, colonedDefault, out TimeSpan timeSpan)) {
                 return timeSpan;
             }
 
@@ -129,15 +136,11 @@ namespace TimeSpanParserUtil {
             return units;
         }
 
-        public static bool TryParse(string text, out TimeSpan timeSpan) {
-            return TryParse(text, Units.None, Units.Hours, out timeSpan);
-        }
-
-        public static bool TryParse(string text, Units defaultPlain, Units defaultColon, out TimeSpan timeSpan) {
+        public static bool TryParse(string text, Units uncolonedDefault, Units colonedDefault, out TimeSpan timeSpan) {
             var options = new TimeSpanParserOptions()
             {
-                DefaultPlain = defaultPlain,
-                DefaultColon = defaultColon
+                UncolonedDefault = uncolonedDefault,
+                ColonedDefault = colonedDefault
             };
             return TryParse(text, out timeSpan, options);
         }
@@ -150,6 +153,9 @@ namespace TimeSpanParserUtil {
                 if (!success)
                     return false;
 
+                if (timeSpans.Length == 0)
+                    return false;
+
                 timeSpan = timeSpans[0];
                 return true;
 
@@ -159,39 +165,38 @@ namespace TimeSpanParserUtil {
             }
         }
 
-        public static bool TryParse(string text, Units defaultPlain, Units defaultColon, out TimeSpan[] timeSpans, int max = int.MaxValue) {
+        public static bool TryParse(string text, Units uncolonedDefault, Units colonedDefault, out TimeSpan[] timeSpans, int max = int.MaxValue) {
             var options = new TimeSpanParserOptions()
             {
-                DefaultPlain = defaultPlain,
-                DefaultColon = defaultColon
+                UncolonedDefault = uncolonedDefault,
+                ColonedDefault = colonedDefault
             };
 
             return TryParse(text, out timeSpans, options, max);
 
         }
         public static bool TryParse(string text, out TimeSpan[] timeSpans, TimeSpanParserOptions options = null, int max = int.MaxValue) {
+            if (options == null)
+                options = new TimeSpanParserOptions(); //TODO: default options object
 
-            Units[] badDefaults = new Units[] { Units.Error, Units.ErrorTooManyUnits, Units.SplitMe, Units.ErrorAmbiguous };
-            if (badDefaults.Any(bad => options.DefaultPlain == bad) || badDefaults.Any(bad => options.DefaultColon == bad)) {
+            Units[] badDefaults = new Units[] { Units.Error, Units.ErrorTooManyUnits, Units.ErrorAmbiguous };
+            if (badDefaults.Any(bad => options.UncolonedDefault == bad) || badDefaults.Any(bad => options.ColonedDefault == bad)) {
                 throw new ArgumentException("Bad default selection.");
             }
 
-            //public static bool TryParse(string text, Units defaultPlain, Units defaultColon, out TimeSpan timeSpan) {
 
-            //expectedPlain is what to interpret a number as by default. e.g. if seconds, then text of "3" becomes 3 seconds
-            //expectedColon is what to interpret a number containing a colon as by default. e.g. if hours, then "3:00" becomes 3 hours
-            //if None is chosen then parsing will fail if the user has not included a unit
-            //The expected Units (expectedPlain and expectedColon) are only used for the first number found in the text, as it's weird otherwise. Subsequent numbers require their own units (or will be treated as separate TimeSpanss)
+            //TODO: https://social.msdn.microsoft.com/Forums/en-US/431d51f9-8003-4c72-ba1f-e830c6ad75ba/regex-to-match-all-number-formats-used-around-the-world?forum=regexp
 
-            //string numberRegexStr = @"[-+]?[0-9\:]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?";
-            string numberRegexStr = @"(([-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?)\:?)+";
+            //string numberRegexStr = @"(([-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?)\:?)+";
+            //options.FormatProvider?.GetFormat(Type.) 
+            string numberRegexStr = @"(([-+]?[0-9]*[\.]?[0-9]+(?:[eE][-+]?[0-9]+)?)\:?)+";
 
             // regex notes:
             // - floating point numbers separated by (or ending with) with colon.
             // - matches a number: 30
             // - also matches floating point number: +3e-10
             // - also allows colons: 10:20:21.70
-            // - or crazy combo: 10.2e+2:20:21.70
+            // - or crazy combo: 10.2e+2:20:21.70 (note: the dot is sometimes a day separator)
 
             // weird things:
             // - supports mixed formats like "22:11h 10s" (=22:11:10)
@@ -201,12 +206,13 @@ namespace TimeSpanParserUtil {
             // regex101.com for testing
 
             //TODO: 
+            // - support for https://en.wikipedia.org/wiki/ISO_8601#Durations
             // - better exception messages
-            // - support , as decimal separator -- culture-specific formats for the current culture.
+            // - support , as decimal separator -- culture-specific formats for the current culture. (eg fr-FR)
             // - word numbers ("one second")
-            // - parsae settings class, e.g. with defaultPlain, defaultColon and degrees of strictness
 
             //TODO some day:
+            // - accept "minutes:30, seconds:10" or "minutes=30"
             // - accept "5:10 mm:ss" format (number with its format)
             // - accept ℯ exponent character (U+212F)
             // - accept weird SI units like microsecond, megaseconds, gigaseconds, decaseconds, etc
@@ -232,13 +238,13 @@ namespace TimeSpanParserUtil {
 
                     string number = match.Value;
                     string suffix = text.Substring(numberEnd, suffixLength);
-                    bool colonishNumber = number.Contains(':');
+                    bool coloned = number.Contains(':');
 
-                    Console.WriteLine($" - n:'{number}', suffix:'{suffix}'");
+                    Console.WriteLine($"part[{i}]: num:'{number}', suffix:'{suffix}', colon:{coloned}");
 
                     Units suffixUnits = ParseSuffix(suffix);
 
-                    if (colonishNumber) {
+                    if (coloned) {
                         builder.StartParsingColonishNumber();
 
                         var parts = number.Split(':');
@@ -248,7 +254,7 @@ namespace TimeSpanParserUtil {
                         }
 
                         var partUnit = builder.GetUnitOrDefaultOption(suffixUnits);
-                        Console.WriteLine($"default partUnit: {partUnit}. default colon options: {options.DefaultColon}");
+                        Console.WriteLine($"default partUnit: {partUnit}. default colon options: {options.ColonedDefault}");
 
                         if (options.AllowDotSeparatedDayHours && parts.Length >= 2 && parts.Length <= 3 && parts[0].Contains('.')) {
                             var p0 = parts[0];
@@ -295,7 +301,9 @@ namespace TimeSpanParserUtil {
                             builder = builder.AddUnit(dPart, partUnit);
                             partUnit = Units.None; // automatically choose future units
                             if (builder.CompleteTimeSpan != null) {
+                                Console.WriteLine($"found colonish unit {builder.CompleteTimeSpan.Value}");
                                 foundTimeSpans.Add(builder.CompleteTimeSpan.Value);
+                                builder.CompleteTimeSpan = null;
                             }
 
                             Console.WriteLine($"WIP: {builder.TimeSpan}");
@@ -317,17 +325,22 @@ namespace TimeSpanParserUtil {
                         //bool ok = builder.AddUnit(parsedNumber, suffixUnits);
                         builder = builder.AddUnit(parsedNumber, suffixUnits);
                         suffixUnits = Units.None; // automatically choose future units
+
                         if (builder.CompleteTimeSpan != null) {
+                            Console.WriteLine($"found noncolonish unit {builder.CompleteTimeSpan.Value}");
                             foundTimeSpans.Add(builder.CompleteTimeSpan.Value);
+                            builder.CompleteTimeSpan = null;
                         }
+
                     }
                 }
 
                 var final = builder?.Final();
                 if (final != null) {
-                        foundTimeSpans.Add(final.Value);
+                    foundTimeSpans.Add(final.Value);
+                    builder.CompleteTimeSpan = null;
                 }
-                    
+
                 timeSpans = foundTimeSpans.ToArray();
                 return true;
 
@@ -342,12 +355,12 @@ namespace TimeSpanParserUtil {
         /// Note: a special entries matches["0"] matches["1"] etc are included if `text` starts with timespans.
         /// </summary>
         /// <param name="text"></param>
-        /// <param name="defaultPlain"></param>
-        /// <param name="defaultColon"></param>
+        /// <param name="uncolonedDefault"></param>
+        /// <param name="colonedDefault"></param>
         /// <param name="prefixes"></param>
         /// <param name="matches"></param>
         /// <returns></returns>
-        public static bool TryParsePrefixed(string text, Units defaultPlain, Units defaultColon, string[] prefixes, out Dictionary<string,TimeSpan?> matches) {
+        public static bool TryParsePrefixed(string text, Units uncolonedDefault, Units colonedDefault, string[] prefixes, out Dictionary<string,TimeSpan?> matches) {
             //string[] prefixes = new string[] { "for", "in", "delay", "wait" };
 
             //TODO: rename "prefixes" to "parameter names" or "keys" or something
@@ -375,7 +388,7 @@ namespace TimeSpanParserUtil {
                         var lookaheadLc = lookahead.ToLowerInvariant();
                         if (!prefixes.Contains(lookaheadLc)) {
                             // try lookahead as timespan
-                            if (TryParse(lookahead, defaultPlain, defaultColon, out TimeSpan timespan)) {
+                            if (TryParse(lookahead, uncolonedDefault, colonedDefault, out TimeSpan timespan)) {
                                 matches[lc] = timespan;
 
                                 i++;
@@ -397,7 +410,7 @@ namespace TimeSpanParserUtil {
                 } else if (i==0) {
                     // first part before any prefixes
 
-                    if (TryParse(part, defaultPlain, defaultColon, out TimeSpan[] timespans)) {
+                    if (TryParse(part, uncolonedDefault, colonedDefault, out TimeSpan[] timespans)) {
                         for (int j = 0; j < timespans.Length; j++) {
                             matches[j.ToString()] = timespans[j];
                         }

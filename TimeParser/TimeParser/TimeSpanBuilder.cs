@@ -18,9 +18,6 @@ namespace TimeSpanParserUtil {
             this.Options = options;
         }
 
-        private bool StrictBigToSmall { get { return Options.StrictBigToSmall; } } // default: true
-        private bool DisallowRepeatedUnit { get { return Options.StrictBigToSmall || Options.StrictBigToSmall; } } // default: true
-
         public TimeSpan TimeSpan { get => timeSpan; }
 
         // the builder has recieved no inputs. Might be considered null rather than 00:00:00
@@ -49,16 +46,21 @@ namespace TimeSpanParserUtil {
             }
         }
 
+        public bool NoMore() {
+            return RemainingTimeSpans <= 0;
+        }
+
         protected TimeSpanBuilder NewBuilder() {
-            if (RemainingTimeSpans <= 0) {
-                return null;
+            if (NoMore()) {
+                // todo: how to send back a timespan now?
             }
 
             var newBuilder = new TimeSpanBuilder(Options);
             newBuilder.RemainingTimeSpans = RemainingTimeSpans - 1;
+            if (currentlyParsingAColonBlock) newBuilder.StartParsingColonishNumber();
             return newBuilder;
         }
-        
+
 
         /// <summary>
         /// e.g. for "10:30", if PrevUnit was minutes (10), then the "NextColonUnit" (30) will be seconds
@@ -70,7 +72,7 @@ namespace TimeSpanParserUtil {
 
             if (PrevUnit >= Units.Days && PrevUnit <= Units.Minutes)
                 return PrevUnit + 1;
-            
+
             if (PrevUnit == Units.Seconds)
                 return Units.ErrorTooManyUnits;
 
@@ -92,7 +94,7 @@ namespace TimeSpanParserUtil {
             if (unit == Units.None) {
                 if (IsNull) {
                     // resort to default
-                    unit = currentlyParsingAColonBlock ? Options.DefaultColon : Options.DefaultPlain;
+                    unit = currentlyParsingAColonBlock ? Options.ColonedDefault : Options.UncolonedDefault;
 
                 } else if (currentlyParsingAColonBlock) {
                     unit = NextColonUnit();
@@ -108,15 +110,20 @@ namespace TimeSpanParserUtil {
         // Can throw: ArgumentException, OverflowException
         // noDeeper = don't go deeper (used internally only to avoid infinite recursion)
         // retrieve the just-completed TimeSpan in CompleteTimeSpan
-        public TimeSpanBuilder AddUnit(double time, Units originalUnit, bool noDeeper = false) {
+        public TimeSpanBuilder AddUnit(double time, Units originalUnit) {
+            return AddUnit(time, originalUnit, false);
+        }
+
+        private TimeSpanBuilder AddUnit(double time, Units originalUnit, bool noDeeper = false) {
 
             // work out what unit we're using. either originalUnit, a default, or a continuation from a colon-number
 
             var unit = GetUnitOrDefaultOption(originalUnit);
 
             // if no default unit, allow a zero anyway (must be at the start, unless 
-            if (unit == Units.None && Options.AllowUnitlessZero && time == 0 && !finishedParsingZeroOnly 
-                    && (IsNull || currentlyParsingZeroOnly || (!Options.StrictBigToSmall && !Options.StrictBigToSmall))) {
+            if ((unit == Units.None || (unit == Units.ErrorTooManyUnits && timeSpan == TimeSpan.Zero)) && Options.AllowUnitlessZero && time == 0) {
+                // will require more to pass later (see: notTheFirstZeroOnly)
+                if (unit == Units.ErrorTooManyUnits) Console.WriteLine($"parsing a zero-only:{currentlyParsingZeroOnly}");
 
                 unit = Units.ZeroOnly;
                 if (currentlyParsingAColonBlock) {
@@ -127,13 +134,12 @@ namespace TimeSpanParserUtil {
 
                     finishedParsingZeroOnly = true;
 
-                    //meh, just follow the rules of repeated units and stuff ?
-                    //var next = NewBuilder();
-                    //next.CompleteTimeSpan = TimeSpan.Zero;
-                    //return next;
+                    //meh, just follow the rules of repeated units and stuff for now...
                 }
 
-            } 
+            }  else if (unit == Units.ZeroOnly && time != 0) {
+                throw new ArgumentException("failed zero only.");
+            }
 
 
             // Done working out what unit is now.
@@ -142,22 +148,17 @@ namespace TimeSpanParserUtil {
             bool repeatedUnit = DoneUnits.Contains(unit);
             PrevUnit = unit;
             DoneUnits.Add(unit);
-            CompleteTimeSpan = null;
-            currentlyParsingZeroOnly = false;
+            if (!noDeeper) CompleteTimeSpan = null; 
+            //currentlyParsingZeroOnly = false;
             bool nowNull = isNull;
             isNull = false;
 
+            //-==[ DON'T USE:  PrevUnit, DoneUnits, or isNull after this point ]==-
+
             Console.WriteLine($"actual unit: {unit}");
-            //don't use PrevUnit or DoneUnits now
 
             if (unit == Units.None || unit == Units.Error || unit == Units.ErrorTooManyUnits || unit == Units.ErrorAmbiguous)
                 throw new ArgumentException("Bad unit exception or no default: " + unit);
-
-            if (unit == Units.SplitMe) { // delete me
-                var next = NewBuilder();
-                next.CompleteTimeSpan = TimeSpan;
-                return next;
-            }
 
             if (nowNull && time < 0) {
                 initialNegative = true;
@@ -165,29 +166,27 @@ namespace TimeSpanParserUtil {
                 time *= -1;
             }
 
-            //if (DoneUnits.Contains(Units.ZeroOnly)) {
-            //    return false; // already had a 0 with no units. that's enough. (if not a colon number)
-            //}
+            bool repeatedUnitViolation = Options.DisallowRepeatedUnit && repeatedUnit && !currentlyParsingZeroOnly;
+            bool bigToSmallViolation = Options.StrictBigToSmall && unit <= prevUnit && !currentlyParsingZeroOnly;
+            bool notTheFirstZeroOnly = !( // not: (i.e. it's fine if...)
+                    unit != Units.ZeroOnly ||  // we're not looking at a ZeroOnly
+                    nowNull ||  // we're at the start anyway
+                    (currentlyParsingZeroOnly && !finishedParsingZeroOnly) || // we're in the middle of a coloned number and we haven't finished one yet
+                    (!Options.StrictBigToSmall && !Options.DisallowRepeatedUnit));  // both StrictBigToSmall and DisallowRepeatedUnit are false (which means we allow multiple ZeroOnlys
 
-            if (DisallowRepeatedUnit && repeatedUnit) {
-                if (noDeeper) throw new ArgumentException("something went wrong");
+            if (repeatedUnitViolation || bigToSmallViolation || notTheFirstZeroOnly) {
+                Console.WriteLine("!! violation !!");
+
+                if (noDeeper) {
+                    Console.WriteLine("something went wrong");
+                    throw new ArgumentException("something went wrong");
+                }
                 var next = NewBuilder();
                 next.CompleteTimeSpan = TimeSpan;
                 next.AddUnit(time, originalUnit, true);
                 return next;
             }
-
-            if (StrictBigToSmall && unit <= prevUnit) {
-                //return false;
-
-                if (noDeeper) throw new ArgumentException("something went wrong");
-                var next = NewBuilder();
-                next.CompleteTimeSpan = TimeSpan;
-                next.AddUnit(time, originalUnit, true);
-                return next;
-            }
-
-
+            
             // Weeks, Days, Hours, Minutes, Seconds, Milliseconds
 
             if (unit == Units.Weeks) {
@@ -208,7 +207,12 @@ namespace TimeSpanParserUtil {
                 long ticks = (long) (time * 10_000_000);
                 timeSpan += TimeSpan.FromTicks(ticks);
 
-                //TODO: check for Options.DecimalSecondsCountsAsMilliseconds
+                if (Options.DecimalSecondsCountsAsMilliseconds) {
+                    var timeTrunc = Math.Truncate(time);
+                    if (time != timeTrunc) {
+                        DoneUnits.Add(Units.Milliseconds);
+                    }
+                }
 
             } else if (unit == Units.Milliseconds) {
                 timeSpan += TimeSpan.FromMilliseconds(time);
