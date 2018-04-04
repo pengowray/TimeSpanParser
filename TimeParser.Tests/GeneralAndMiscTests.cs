@@ -27,6 +27,15 @@ namespace TimeSpanParserUtil.Tests {
                 TimeSpanParser.Parse("2 weeks, 1 day, 1 hour, 30 seconds, 20 milliseconds"));
         }
 
+        [TestMethod]
+        public void CapsTests() {
+            Assert.AreEqual(TimeSpan.FromHours(2), TimeSpanParser.Parse("2 hours"));
+            Assert.AreEqual(TimeSpan.FromHours(2), TimeSpanParser.Parse("2 HOURS"));
+            Assert.AreEqual(TimeSpan.FromHours(2), TimeSpanParser.Parse("  2 Hrs  "));
+            Assert.AreEqual(TimeSpan.FromHours(2), TimeSpanParser.Parse("2 hOUr  "));
+            Assert.AreEqual(TimeSpan.FromMinutes(2), TimeSpanParser.Parse("  2 MiNuTeS"));
+        }
+
 
         [TestMethod]
         [DataRow("1:08:18:10", "1:08:18:10")]

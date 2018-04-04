@@ -15,6 +15,9 @@ namespace TimeSpanParserUtil
         // valid things are: Days, Hours, Minutes
         public Units ColonedDefault = Units.Hours;
 
+        //NYI TODO and make true by default
+        public bool FailIfMoreTimeSpansFoundThanRequested = false;
+
         // e.g. if true and ColonedDefault = Units.Minutes, parse "05:10:30" as "05h10m30s" rather than failing
         public bool AutoUnitsIfTooManyColons = true;
 
@@ -57,10 +60,11 @@ namespace TimeSpanParserUtil
         //TODO: normal initial negative handling. Should -30h 30m mean -30:30h or -30h +30m (-29.5h).. argh.
         //public bool WeirdNegativeHandling = false;
 
-        // Currently only for parsing numbers (and only partially)
-        // In future, may be changed to default to CultureInfo.CurrentCulture or CultureInfo.InvariantCulture
-        //TODO: largely NYI
-        public IFormatProvider FormatProvider = null; 
+        // For parsing numbers, etc
+        // Defaulting to CultureInfo.InvariantCulture for now until support is improved.
+        // In future, will default to CultureInfo.CurrentCulture
+        // Not fully supported yet. Does support changing the units decimal separator but then might fail on a US-style coloned number where .net's TimeSpan.Parser would not
+        public IFormatProvider FormatProvider = CultureInfo.InvariantCulture;
 
     }
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Linq;
+using System.Globalization;
 
 namespace TimeSpanParserUtil {
 
@@ -15,7 +16,7 @@ namespace TimeSpanParserUtil {
 
     public class TimeSpanParser {
         public static TimeSpan Parse(string text) {
-            if (TryParse(text, out TimeSpan timeSpan)) {
+            if (TryParse(text, timeSpan: out TimeSpan timeSpan)) {
                 return timeSpan;
             }
 
@@ -23,7 +24,7 @@ namespace TimeSpanParserUtil {
         }
 
         public static TimeSpan Parse(string text, TimeSpanParserOptions options) {
-            if (TryParse(text, out TimeSpan timeSpan, options)) {
+            if (TryParse(text, options, out TimeSpan timeSpan)) {
                 return timeSpan;
             }
 
@@ -106,7 +107,7 @@ namespace TimeSpanParserUtil {
                 regex.Append(@"?<units>"); // name group
                 regex.Append(string.Join("|", GetUnitsDict().Keys.Select(k => Regex.Escape(k))));
                 regex.Append(@")\b");
-                _UnitsRegex = new Regex(regex.ToString(), RegexOptions.IgnoreCase & RegexOptions.Compiled);
+                _UnitsRegex = new Regex(regex.ToString(), RegexOptions.IgnoreCase | RegexOptions.Compiled);
             }
 
             return _UnitsRegex;
@@ -127,7 +128,7 @@ namespace TimeSpanParserUtil {
 
             var dict = GetUnitsDict();
             var units = Units.None;
-            var success = dict.TryGetValue(match.Groups["units"].Value.ToLowerInvariant(), out units);
+            var success = dict.TryGetValue(match.Groups["units"].Value.ToLowerInvariant().Trim(), out units);
             //success = success && units != Units.ErrorAmbiguous && units != Units.Error;
 
             if (!success)
@@ -142,10 +143,14 @@ namespace TimeSpanParserUtil {
                 UncolonedDefault = uncolonedDefault,
                 ColonedDefault = colonedDefault
             };
-            return TryParse(text, out timeSpan, options);
+            return TryParse(text, options, out timeSpan);
         }
 
-        public static bool TryParse(string text, out TimeSpan timeSpan, TimeSpanParserOptions options = null) {
+        public static bool TryParse(string text, out TimeSpan timeSpan) {
+            return TryParse(text, null, out timeSpan);
+        }
+
+        public static bool TryParse(string text, TimeSpanParserOptions options, out TimeSpan timeSpan) {
 
             try {
                 TimeSpan[] timeSpans;
@@ -184,12 +189,17 @@ namespace TimeSpanParserUtil {
                 throw new ArgumentException("Bad default selection.");
             }
 
-
             //TODO: https://social.msdn.microsoft.com/Forums/en-US/431d51f9-8003-4c72-ba1f-e830c6ad75ba/regex-to-match-all-number-formats-used-around-the-world?forum=regexp
 
-            //string numberRegexStr = @"(([-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?)\:?)+";
-            //options.FormatProvider?.GetFormat(Type.) 
-            string numberRegexStr = @"(([-+]?[0-9]*[\.]?[0-9]+(?:[eE][-+]?[0-9]+)?)\:?)+";
+            text = text.Normalize(NormalizationForm.FormKC); // fixing any fullwidth characters
+            text = text.Replace('_', ' '); 
+
+            var numberFormatInfo = CultureInfo.CurrentCulture.NumberFormat;
+            if (options.FormatProvider != null) numberFormatInfo = NumberFormatInfo.GetInstance(options.FormatProvider);
+            string decimalSeparator = numberFormatInfo.NumberDecimalSeparator;
+            if (options.AllowDotSeparatedDayHours && decimalSeparator != ".") decimalSeparator += "."; // always also need a dot for day.hour separation (unless that's off)
+
+            string numberRegexStr = @"(([-+]?[0-9]*[" + Regex.Escape(decimalSeparator) + @"}]?[0-9]+(?:[eE][-+]?[0-9]+)?)\:?)+";
 
             // regex notes:
             // - floating point numbers separated by (or ending with) with colon.
@@ -197,24 +207,21 @@ namespace TimeSpanParserUtil {
             // - also matches floating point number: +3e-10
             // - also allows colons: 10:20:21.70
             // - or crazy combo: 10.2e+2:20:21.70 (note: the dot is sometimes a day separator)
+            // - regex101.com for testing
 
             // weird things:
             // - supports mixed formats like "22:11h 10s" (=22:11:10)
             // - starting colon will be ignored, ":30" =30
             // - but not after: 3: (treated as "3")
 
-            // regex101.com for testing
-
             //TODO: 
             // - support for https://en.wikipedia.org/wiki/ISO_8601#Durations
             // - better exception messages
-            // - support , as decimal separator -- culture-specific formats for the current culture. (eg fr-FR)
             // - word numbers ("one second")
 
             //TODO some day:
             // - accept "minutes:30, seconds:10" or "minutes=30"
             // - accept "5:10 mm:ss" format (number with its format)
-            // - accept ℯ exponent character (U+212F)
             // - accept weird SI units like microsecond, megaseconds, gigaseconds, decaseconds, etc
             // - give error on slash, e.g. 20/sec
             // - explicitly accept weird plurals, e.g. 20 sec/s or second(s) -- already fine already because creates word boundry
@@ -231,7 +238,7 @@ namespace TimeSpanParserUtil {
                 for (int i = 0; i < matches.Count; i++) { //  foreach (Match match in matches) {
                     Match match = matches[i];
                     int numberEnd = match.Index + match.Length;
-                    int nextMatchIndex = (i + 1 < matches.Count ? matches[i+1].Index : text.Length);
+                    int nextMatchIndex = (i + 1 < matches.Count ? matches[i + 1].Index : text.Length);
                     int suffixLength = nextMatchIndex - numberEnd;
 
                     //Console.WriteLine($"text:{text}. match[{i}]: suffixLength:{suffixLength}");
@@ -259,7 +266,7 @@ namespace TimeSpanParserUtil {
                         if (options.AllowDotSeparatedDayHours && parts.Length >= 2 && parts.Length <= 3 && parts[0].Contains('.')) {
                             var p0 = parts[0];
                             if (p0.Count(ch => ch == '.') > 1) {
-                                if (p0.TrimEnd('.').Count(ch => ch == '.') > 1) { // last chance.. remove trailing dots
+                                if (p0.TrimEnd('.').Count(ch => ch == '.') > 1) { // give one last chance.. remove trailing dots
                                     throw new FormatException("Multiple dots. Don't know where to cut days and hour.");
                                 } else {
                                     p0 = p0.TrimEnd('.');
@@ -286,15 +293,17 @@ namespace TimeSpanParserUtil {
 
                         // Weeks, Days, Hours, Minutes, Seconds, Milliseconds
                         foreach (var part in parts) {
-                            Console.WriteLine($"colon bit: {part} -- {partUnit}" );
+                            Console.WriteLine($"colon bit: {part} -- {partUnit}");
 
                             if (partUnit == Units.ErrorTooManyUnits || partUnit == Units.Milliseconds) {
                                 timeSpans = foundTimeSpans.ToArray();
                                 return false; // too many colons
                             }
 
-                            double dPart = 0;
-                            if (!string.IsNullOrWhiteSpace(part) && !double.TryParse(part, options.NumberStyles, options.FormatProvider, out dPart)) {
+                            //double dPart = 0;
+                            //if (!string.IsNullOrWhiteSpace(part) && !double.TryParse(part, options.NumberStyles, options.FormatProvider, out dPart)) {
+                            decimal dPart = 0;
+                            if (!string.IsNullOrWhiteSpace(part) && !decimal.TryParse(part, options.NumberStyles, options.FormatProvider, out dPart)) {
                                 timeSpans = foundTimeSpans.ToArray();
                                 return false; // failed to parse number (as double). Empty strings treated as 0.
                             }
@@ -313,9 +322,12 @@ namespace TimeSpanParserUtil {
                         builder?.EndParsingColonishNumber();
 
                     } else {
-                        
-                        double parsedNumber;
-                        bool numberSuccess = double.TryParse(number, options.NumberStyles, options.FormatProvider, out parsedNumber);
+
+                        //double parsedNumber;
+                        //bool numberSuccess = double.TryParse(number, options.NumberStyles, options.FormatProvider, out parsedNumber);
+                        decimal parsedNumber;
+                        bool numberSuccess = decimal.TryParse(number, options.NumberStyles, options.FormatProvider, out parsedNumber);
+
                         if (!numberSuccess) {
                             Console.WriteLine($" - failed to parse number:'{parsedNumber}'");
                             timeSpans = foundTimeSpans.ToArray();
@@ -360,10 +372,24 @@ namespace TimeSpanParserUtil {
         /// <param name="prefixes"></param>
         /// <param name="matches"></param>
         /// <returns></returns>
-        public static bool TryParsePrefixed(string text, Units uncolonedDefault, Units colonedDefault, string[] prefixes, out Dictionary<string,TimeSpan?> matches) {
+        public static bool TryParsePrefixed(string text, string[] prefixes, Units uncolonedDefault, Units colonedDefault, out Dictionary<string, TimeSpan?> matches) {
+            var options = new TimeSpanParserOptions();
+            options.UncolonedDefault = uncolonedDefault;
+            options.ColonedDefault = colonedDefault;
+            return TryParsePrefixed(text, prefixes, options, out matches);
+        }
+        public static bool TryParsePrefixed(string text, string[] prefixes, out Dictionary<string, TimeSpan?> matches) {
+            return TryParsePrefixed(text, prefixes, null, out matches);
+        }
+
+        public static bool TryParsePrefixed(string text, string[] prefixes, TimeSpanParserOptions options,  out Dictionary<string, TimeSpan?> matches) {
             //string[] prefixes = new string[] { "for", "in", "delay", "wait" };
 
             //TODO: rename "prefixes" to "parameter names" or "keys" or something
+
+            if (options == null) {
+                options = new TimeSpanParserOptions();
+            }
 
             matches = new Dictionary<string, TimeSpan?>();
 
@@ -388,7 +414,7 @@ namespace TimeSpanParserUtil {
                         var lookaheadLc = lookahead.ToLowerInvariant();
                         if (!prefixes.Contains(lookaheadLc)) {
                             // try lookahead as timespan
-                            if (TryParse(lookahead, uncolonedDefault, colonedDefault, out TimeSpan timespan)) {
+                            if (TryParse(lookahead, options, out TimeSpan timespan)) {
                                 matches[lc] = timespan;
 
                                 i++;
@@ -410,7 +436,7 @@ namespace TimeSpanParserUtil {
                 } else if (i==0) {
                     // first part before any prefixes
 
-                    if (TryParse(part, uncolonedDefault, colonedDefault, out TimeSpan[] timespans)) {
+                    if (TryParse(part, out TimeSpan[] timespans, options)) {
                         for (int j = 0; j < timespans.Length; j++) {
                             matches[j.ToString()] = timespans[j];
                         }

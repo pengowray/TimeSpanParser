@@ -25,7 +25,7 @@ namespace TimeSpanParserUtil.Tests {
         [DataRow("It took me 32 seconds + 555 milliseconds", 0, 0, 0, 32, 555)]
         public void WildTests(string parseThis, int days, int hours, int minutes, int seconds, int milliseconds) {
             var expected = new TimeSpan(days, hours, minutes, seconds, milliseconds);
-            bool success = TimeSpanParser.TryParse(parseThis, out TimeSpan actual);
+            bool success = TimeSpanParser.TryParse(parseThis, timeSpan: out TimeSpan actual);
 
             Assert.IsTrue(success);
             Assert.AreEqual(expected, actual);
@@ -39,21 +39,12 @@ namespace TimeSpanParserUtil.Tests {
         [DataRow("3.days,18.seconds", 3, 0, 0, 18, 0)] //shouldn't work in fr-FR though
         public void WildAlmostTests(string parseThis, int days, int hours, int minutes, int seconds, int milliseconds) {
             var expected = new TimeSpan(days, hours, minutes, seconds, milliseconds);
-            bool success = TimeSpanParser.TryParse(parseThis, out TimeSpan actual);
+            bool success = TimeSpanParser.TryParse(parseThis, timeSpan: out TimeSpan actual);
 
             Assert.IsTrue(success);
             Assert.AreEqual(expected, actual);
         }
 
-        [TestMethod]
-        [DataRow("3_days_18_seconds", 3, 0, 0, 18, 0)] // underscore is treated as a character for regex word boundries (\b) and words (\w)
-        public void UnderscoreTest(string parseThis, int days, int hours, int minutes, int seconds, int milliseconds) {
-            var expected = new TimeSpan(days, hours, minutes, seconds, milliseconds);
-            bool success = TimeSpanParser.TryParse(parseThis, out TimeSpan actual);
-
-            Assert.IsTrue(success);
-            Assert.AreEqual(expected, actual);
-        }
 
     }
 }

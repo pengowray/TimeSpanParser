@@ -22,13 +22,13 @@ namespace TimeSpanParserUtil.Tests {
         [DataRow("00:30:00", 0, 0, 30, 0, 0)] // c
         [DataRow("3.17:25:30.5000000", 3, 17, 25, 30, 500)] // c
         [DataRow("1:3:16:50.5", 1, 3, 16, 50, 500)] // g
-        [DataRow("1:3:16:50.599", 1, 3, 16, 50, 599)] // g // fails (actual: 1.03:16:50.5989999)
+        [DataRow("1:3:16:50.599", 1, 3, 16, 50, 599)] // g // fails if seconds is parsed as a double (actual: 1.03:16:50.5989999), but ok now it's decimal
         [DataRow("0:18:30:00.0000000", 0, 18, 30, 0, 0)] // G
         public void ReversedFormatStringUS(string parseThis, int days, int hours, int minutes, int seconds, int milliseconds) {
             var expected = new TimeSpan(days, hours, minutes, seconds, milliseconds);
 
             TimeSpan actual;
-            bool success = TimeSpanParser.TryParse(parseThis, out actual);
+            bool success = TimeSpanParser.TryParse(parseThis, timeSpan: out actual);
 
             Assert.IsTrue(success);
             Assert.AreEqual(expected, actual);
@@ -40,16 +40,17 @@ namespace TimeSpanParserUtil.Tests {
         [DataRow("1.12:24:02", 1, 12, 23, 62, 0)]
         [DataRow("00:00:00", 0, 0, 0, 0, 0)] // c
         [DataRow("00:30:00", 0, 0, 30, 0, 0)] // c
-        [DataRow("1:3:16:50,5", 1, 3, 16, 50, 500)] // g fr-FR (TODO)
-        [DataRow("1:3:16:50,599", 1, 3, 16, 50, 599)] // g fr-FR (TODO)
-        [DataRow("0:18:30:00,0000000", 0, 18, 30, 0, 0)] // G fr-FR (TODO)
+        [DataRow("1:3:16:50,5", 1, 3, 16, 50, 500)] // g fr-FR
+        [DataRow("1:3:16:50,599", 1, 3, 16, 50, 599)] // g fr-FR 
+        [DataRow("0:18:30:00,0000000", 0, 18, 30, 0, 0)] // G fr-FR
         public void ReversedFormatStringFR(string parseThis, int days, int hours, int minutes, int seconds, int milliseconds) {
+            Console.WriteLine(parseThis);
             var expected = new TimeSpan(days, hours, minutes, seconds, milliseconds);
 
             var options = new TimeSpanParserOptions();
             options.FormatProvider = new CultureInfo("fr-FR");
             TimeSpan actual;
-            bool success = TimeSpanParser.TryParse(parseThis, out actual, options);
+            bool success = TimeSpanParser.TryParse(parseThis, options, out actual);
 
             Assert.IsTrue(success);
             Assert.AreEqual(expected, actual);
@@ -72,7 +73,7 @@ namespace TimeSpanParserUtil.Tests {
             options.FormatProvider = new CultureInfo("en-US");
 
             TimeSpan actual;
-            bool success = TimeSpanParser.TryParse(parseThis, out actual, options);
+            bool success = TimeSpanParser.TryParse(parseThis, options, out actual);
             Assert.IsTrue(success);
             Assert.AreEqual(expected, actual);
         }
