@@ -10,7 +10,7 @@ namespace TimeSpanParserUtil.Tests {
 
     [TestClass]
     public class PrefexTests {
-        string[] prefixes = new string[] { "for", "in", "delay", "wait", "now" };
+        string[] prefixes = new string[] { "for", "in", "wait", "now" };
         TimeSpanParserOptions minuteOptions = new TimeSpanParserOptions
         {
             ColonedDefault = Units.Minutes,
@@ -36,7 +36,7 @@ namespace TimeSpanParserUtil.Tests {
         [DataRow("11:10 5 0 wait 6")] // 5
         [DataRow("10:20 30 now")] // 4
         [DataRow("in 5, wait.5")] // 1
-        [DataRow("test for 3400 minutes 3 seconds in 2 HOURS delay=30 ")] // 3
+        [DataRow("test for 3400 minutes 3 seconds in 2 HOURS wait=30 ")] // 3
         [DataRow("Elapsed time: 0:00:00.0001497")] // 2
         [DataRow("1:10 2:20")] // 7
         [DataRow("1:10 in 2:20 for 3:30")]
@@ -96,24 +96,24 @@ namespace TimeSpanParserUtil.Tests {
 
         [TestMethod]
         public void PrefixTest_3_minutes() {
-            string parseThis = "test for 3400 minutes 3 seconds in 2 HOURS delay=30 ";
+            string parseThis = "test for 3400 minutes 3 seconds in 2 HOURS wait=30 ";
 
             var expected = new Dictionary<string, TimeSpan?>();
             expected["for"] = TimeSpan.FromMinutes(3400) + TimeSpan.FromSeconds(3); // Parse("2.08:40:03");
             expected["in"] = TimeSpan.Parse("02:00:00");  // TimeSpan.Parse("00:02:00");
-            expected["delay"] = TimeSpan.Parse("00:30:00");
+            expected["wait"] = TimeSpan.Parse("00:30:00");
 
             DoParseAndCompare(expected, parseThis, minuteOptions);
         }
 
         [TestMethod]
         public void PrefixTest_3() {
-            string parseThis = "test for 3400 minutes 3 seconds in 2 HOURS delay=30m ";
+            string parseThis = "test for 3400 minutes 3 seconds in 2 HOURS wait=30m ";
 
             var expected = new Dictionary<string, TimeSpan?>();
             expected["for"] = TimeSpan.FromMinutes(3400) + TimeSpan.FromSeconds(3); // Parse("2.08:40:03");
             expected["in"] = TimeSpan.Parse("02:00:00");  // TimeSpan.Parse("00:02:00");
-            expected["delay"] = TimeSpan.Parse("00:30:00");
+            expected["wait"] = TimeSpan.Parse("00:30:00");
 
             DoParseAndCompare(expected, parseThis, defaultOptions);
         }
@@ -146,7 +146,7 @@ namespace TimeSpanParserUtil.Tests {
 
             var expected = new Dictionary<string, TimeSpan?>();
             expected["0"] = TimeSpan.Parse("10:20:00");
-            // "30" ignored because no units
+            expected["1"] = TimeSpan.Zero;
             expected["now"] = null;
 
             DoParseAndCompare(expected, parseThis, nofailOptions);

@@ -36,6 +36,7 @@ namespace TimeSpanParserUtil.Tests {
         [DataRow("0:0:0:0:0:0")]
         [DataRow("0 0 0 0 0")] // everything after first 0 should be ignored
         [DataRow("0000.00000000:00.0:0.00:00.00")]
+        [DataRow("0:0:0:0:0:0:0:0:0:0.0")]
         public void ZeroOnlyWeirdnessTest(string parseThis) {
             Console.WriteLine(parseThis);
 

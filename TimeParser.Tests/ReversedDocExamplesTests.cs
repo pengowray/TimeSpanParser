@@ -38,7 +38,6 @@ namespace TimeSpanParserUtil.Tests {
         // fr-FR examples from https://docs.microsoft.com/en-us/dotnet/standard/base-types/standard-timespan-format-strings 
 
         [TestMethod]
-        [DataRow("1.12:24:02", 1, 12, 23, 62, 0)]
         [DataRow("00:00:00", 0, 0, 0, 0, 0)] // c
         [DataRow("00:30:00", 0, 0, 30, 0, 0)] // c
         [DataRow("1:3:16:50,5", 1, 3, 16, 50, 500)] // g fr-FR
@@ -61,6 +60,7 @@ namespace TimeSpanParserUtil.Tests {
         [TestMethod]
         [DataRow("10675199:2:48:05,4775807")] // French is fine
         [DataRow("10675199.02:48:05.4775807")] // But US with FR parser fails
+        [DataRow("1.12:24:02", 1, 12, 23, 62, 0)]
         public void FutureParseUSFormatWithFR(string parseThis) {
             //TODO: make this pass by fixing parser to try French format first, then fallback to invariant. Perhaps allowing a mix if unambiguous
 

@@ -78,10 +78,20 @@ namespace TimeSpanParserUtil.Tests {
         [DataRow("3 hours, 18 minutes")]
         [DataRow("3:18h 0s")]
         [DataRow("0.125 days and 1080 seconds")]
-        [DataRow("0.125:00:00:1080.00 days")]
+        [DataRow("0.125 days 00:00:1080.00")]
         public void MoreExamples(string parseThis) {
             var expected = new TimeSpan(3, 18, 0);
             Assert.AreEqual(expected, TimeSpanParser.Parse(parseThis));
+        }
+
+        [TestMethod]
+        [DataRow("0.125:00:00:1080.00 days")]
+        [DataRow("0.125:00:00:1080.00")]
+        public void NoAllowDotSeparatedDayHoursExample(string parseThis) {
+            var options = new TimeSpanParserOptions();
+            options.AllowDotSeparatedDayHours = false;
+            var expected = new TimeSpan(3, 18, 0);
+            Assert.AreEqual(expected, TimeSpanParser.Parse(parseThis, options));
         }
 
         [TestMethod]

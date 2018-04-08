@@ -37,7 +37,7 @@ namespace TimeSpanParserUtil.Tests {
         [DataRow("10m:58s", 0, 0, 10, 58, 0)]
         [DataRow("10h:58s", 0, 10, 0, 58, 0)]
         [DataRow("3.days,18.seconds", 3, 0, 0, 18, 0)] //shouldn't work in fr-FR though
-        public void WildAlmostTests(string parseThis, int days, int hours, int minutes, int seconds, int milliseconds) {
+        public void WildesqueTests(string parseThis, int days, int hours, int minutes, int seconds, int milliseconds) {
             var expected = new TimeSpan(days, hours, minutes, seconds, milliseconds);
             bool success = TimeSpanParser.TryParse(parseThis, timeSpan: out TimeSpan actual);
 
