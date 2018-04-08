@@ -4,6 +4,13 @@ using System.Text;
 
 namespace TimeSpanParserUtil {
     class TimeSpanBuilder {
+        // meta stuff
+
+        public List<TimeSpan> FoundTimeSpans = new List<TimeSpan>(); //TODO: lazy init
+        public bool DoneFinding = false;
+
+        // more stuff
+
         private Units PrevUnit = Units.None;
         private HashSet<Units> DoneUnits = new HashSet<Units>(); //TODO: only create if needed
 
@@ -32,18 +39,27 @@ namespace TimeSpanParserUtil {
         private bool currentlyParsingAColonBlock = false;
         private bool currentlyParsingZeroOnly = false;
         private bool finishedParsingZeroOnly = false;
-        public TimeSpan? CompleteTimeSpan;
+        //public TimeSpan? CompleteTimeSpan;
 
         public void StartParsingColonishNumber() {
+            if (!IsNull) {
+                //FoundTimeSpans.Add(timeSpan);
+                //currentlyParsingAColonBlock = false;
+                //return NewBuilder();
+            }
+
             currentlyParsingAColonBlock = true;
+            PrevUnit = Units.None; // TODO: in rare cases, if the previous colonish number was a day:hours and this one has no possible units and can't be a new match, then perhaps it should be treated as the minute:seconds part
         }
 
-        public void EndParsingColonishNumber() {
+        public TimeSpanBuilder EndParsingColonishNumber() {
+
             currentlyParsingAColonBlock = false;
             if (currentlyParsingZeroOnly) {
                 currentlyParsingZeroOnly = false;
                 finishedParsingZeroOnly = true;
             }
+            return this;
         }
 
         public bool NoMore() {
@@ -57,6 +73,7 @@ namespace TimeSpanParserUtil {
 
             var newBuilder = new TimeSpanBuilder(Options);
             newBuilder.RemainingTimeSpans = RemainingTimeSpans - 1;
+            newBuilder.FoundTimeSpans = FoundTimeSpans;
             if (currentlyParsingAColonBlock) newBuilder.StartParsingColonishNumber();
             return newBuilder;
         }
@@ -82,12 +99,22 @@ namespace TimeSpanParserUtil {
             return Units.Error;
         }
 
-        public TimeSpan? Final() {
+        private TimeSpan? Final() {
             if (IsNull)
                 return null;
 
             return TimeSpan;
         }
+
+        public TimeSpan[] FinalSpans() {
+            if (!IsNull) {
+                FoundTimeSpans.Add(TimeSpan);
+            }
+
+            DoneFinding = true;
+            return FoundTimeSpans.ToArray();
+        }
+
 
         public Units GetUnitOrDefaultOption(Units originalUnit) {
             var unit = originalUnit;
@@ -148,7 +175,7 @@ namespace TimeSpanParserUtil {
             bool repeatedUnit = DoneUnits.Contains(unit);
             PrevUnit = unit;
             DoneUnits.Add(unit);
-            if (!noDeeper) CompleteTimeSpan = null; 
+            //if (!noDeeper) CompleteTimeSpan = null; 
             //currentlyParsingZeroOnly = false;
             bool nowNull = isNull;
             isNull = false;
@@ -166,7 +193,7 @@ namespace TimeSpanParserUtil {
                 time *= -1;
             }
 
-            bool noUnitsBut = (unit == Units.None && !noDeeper && !nowNull); // no units but maybe next time...
+            bool noUnitsButMaybe = (unit == Units.None && !noDeeper && !nowNull); // no units but maybe next time...
             bool repeatedUnitViolation = Options.DisallowRepeatedUnit && repeatedUnit && !currentlyParsingZeroOnly;
             bool bigToSmallViolation = Options.StrictBigToSmall && unit <= prevUnit && !currentlyParsingZeroOnly;
             bool notTheFirstZeroOnly = !( // not: (i.e. it's fine if...)
@@ -175,16 +202,28 @@ namespace TimeSpanParserUtil {
                     (currentlyParsingZeroOnly && !finishedParsingZeroOnly) || // we're in the middle of a coloned number and we haven't finished one yet
                     (!Options.StrictBigToSmall && !Options.DisallowRepeatedUnit));  // both StrictBigToSmall and DisallowRepeatedUnit are false (which means we allow multiple ZeroOnlys
 
-            if (repeatedUnitViolation || bigToSmallViolation || notTheFirstZeroOnly || noUnitsBut) {
+            if (repeatedUnitViolation || bigToSmallViolation || notTheFirstZeroOnly || noUnitsButMaybe) {
                 Console.WriteLine("!! violation !!");
 
                 if (noDeeper) {
-                    Console.WriteLine("something went wrong");
-                    throw new ArgumentException("something went wrong");
+                    Console.WriteLine("Really definitely no units"); // "something went wrong"
+
+                    if (Options.FailOnUnitlessNumber) {
+                        DoneFinding = true;
+                        throw new ArgumentException("something went wrong"); // this is ok to happen now
+                    } else {
+                        //FoundTimeSpans.Add(TimeSpan);
+                        // ignore unit and continue on...
+                        var startOver = NewBuilder();
+                        return startOver;
+                    }
                 }
+
                 var next = NewBuilder();
-                next.CompleteTimeSpan = TimeSpan;
+                next.FoundTimeSpans.Add(TimeSpan);
+                //if (!noUnitsButMaybe) next.FoundTimeSpans.Add(TimeSpan);
                 next.AddUnit(time, originalUnit, true);
+
                 return next;
             }
             

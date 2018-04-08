@@ -83,11 +83,13 @@ namespace TimeSpanParserUtil {
 
                 // We don't currently handle months.
                 //TODO: Gather use cases. Setting to handle as 28/30/31/30.43685 days or as error
+                //TODO: allow 0 months
                 _Units["month"] = Units.ErrorAmbiguous;
                 _Units["months"] = Units.ErrorAmbiguous;
 
                 // We don't currently handle years. 
                 //TODO: Gather use cases. Perhaps create a min-max possible range. Or allow to be set by the user e.g. 365 / 366 / 365.25 / 365.24 / 365.2422 / ErrorAmbiguous
+                //TODO: allow 0 years
                 _Units["y"] = Units.ErrorAmbiguous;
                 _Units["ys"] = Units.ErrorAmbiguous;
                 _Units["year"] = Units.ErrorAmbiguous;
@@ -181,6 +183,16 @@ namespace TimeSpanParserUtil {
 
         }
         public static bool TryParse(string text, out TimeSpan[] timeSpans, TimeSpanParserOptions options = null, int max = int.MaxValue) {
+            try {
+                return DoParseMutliple(text, out timeSpans, options, max);
+            } catch {
+                timeSpans = null;
+                return false;
+            }
+        }
+
+
+        protected static bool DoParseMutliple(string text, out TimeSpan[] timeSpans, TimeSpanParserOptions options = null, int max = int.MaxValue) {
             if (options == null)
                 options = new TimeSpanParserOptions(); //TODO: default options object
 
@@ -192,7 +204,7 @@ namespace TimeSpanParserUtil {
             //TODO: https://social.msdn.microsoft.com/Forums/en-US/431d51f9-8003-4c72-ba1f-e830c6ad75ba/regex-to-match-all-number-formats-used-around-the-world?forum=regexp
 
             text = text.Normalize(NormalizationForm.FormKC); // fixing any fullwidth characters
-            text = text.Replace('_', ' '); 
+            text = text.Replace('_', ' ');
 
             var numberFormatInfo = CultureInfo.CurrentCulture.NumberFormat;
             if (options.FormatProvider != null) numberFormatInfo = NumberFormatInfo.GetInstance(options.FormatProvider);
@@ -226,141 +238,127 @@ namespace TimeSpanParserUtil {
             // - give error on slash, e.g. 20/sec
             // - explicitly accept weird plurals, e.g. 20 sec/s or second(s) -- already fine already because creates word boundry
 
-            List<TimeSpan> foundTimeSpans = new List<TimeSpan>();
+            //List<TimeSpan> foundTimeSpans = new List<TimeSpan>();
 
-            try {
-                var numberRegex = new Regex(numberRegexStr); // TODO: re-use regex + RegexOptions.Compiled
+            var numberRegex = new Regex(numberRegexStr); // TODO: re-use regex + RegexOptions.Compiled
 
-                TimeSpanBuilder builder = new TimeSpanBuilder(options);
-                builder.RemainingTimeSpans = max;
+            TimeSpanBuilder builder = new TimeSpanBuilder(options);
+            builder.RemainingTimeSpans = max;
 
-                var matches = numberRegex.Matches(text);
-                for (int i = 0; i < matches.Count; i++) { //  foreach (Match match in matches) {
-                    Match match = matches[i];
-                    int numberEnd = match.Index + match.Length;
-                    int nextMatchIndex = (i + 1 < matches.Count ? matches[i + 1].Index : text.Length);
-                    int suffixLength = nextMatchIndex - numberEnd;
+            var matches = numberRegex.Matches(text);
+            for (int i = 0; i < matches.Count; i++) { //  foreach (Match match in matches) {
+                Match match = matches[i];
+                int numberEnd = match.Index + match.Length;
+                int nextMatchIndex = (i + 1 < matches.Count ? matches[i + 1].Index : text.Length);
+                int suffixLength = nextMatchIndex - numberEnd;
 
-                    //Console.WriteLine($"text:{text}. match[{i}]: suffixLength:{suffixLength}");
+                //Console.WriteLine($"text:{text}. match[{i}]: suffixLength:{suffixLength}");
 
-                    string number = match.Value;
-                    string suffix = text.Substring(numberEnd, suffixLength);
-                    bool coloned = number.Contains(':');
+                string number = match.Value;
+                string suffix = text.Substring(numberEnd, suffixLength);
+                bool coloned = number.Contains(':');
 
-                    Console.WriteLine($"part[{i}]: num:'{number}', suffix:'{suffix}', colon:{coloned}");
+                Console.WriteLine($"part[{i}]: num:'{number}', suffix:'{suffix}', colon:{coloned}");
 
-                    Units suffixUnits = ParseSuffix(suffix);
+                Units suffixUnits = ParseSuffix(suffix);
 
-                    if (coloned) {
-                        builder.StartParsingColonishNumber();
+                if (coloned) {
+                    builder.StartParsingColonishNumber();
 
-                        var parts = number.Split(':');
-                        if (parts.Length <= 0) {
-                            timeSpans = foundTimeSpans.ToArray();
-                            return false; // something went wrong
-                        }
+                    var parts = number.Split(':');
+                    if (parts.Length <= 0) {
+                        timeSpans = builder.FinalSpans(); // foundTimeSpans.ToArray();
+                        return false; // something went wrong
+                    }
 
-                        var partUnit = builder.GetUnitOrDefaultOption(suffixUnits);
-                        Console.WriteLine($"default partUnit: {partUnit}. default colon options: {options.ColonedDefault}");
+                    var partUnit = builder.GetUnitOrDefaultOption(suffixUnits);
+                    Console.WriteLine($"default partUnit: {partUnit}. default colon options: {options.ColonedDefault}");
 
-                        if (options.AllowDotSeparatedDayHours && parts.Length >= 2 && parts.Length <= 3 && parts[0].Contains('.')) {
-                            var p0 = parts[0];
-                            if (p0.Count(ch => ch == '.') > 1) {
-                                if (p0.TrimEnd('.').Count(ch => ch == '.') > 1) { // give one last chance.. remove trailing dots
-                                    throw new FormatException("Multiple dots. Don't know where to cut days and hour.");
-                                } else {
-                                    p0 = p0.TrimEnd('.');
-                                }
-                            }
-
-                            parts = p0.Split('.', 2).Concat(parts.Skip(1)).ToArray();
-                            partUnit = Units.Days;
-
-                        } else if (options.AutoUnitsIfTooManyColons) {
-                            if (parts.Length == 4 && partUnit >= Units.Hours && partUnit < Units.Milliseconds || partUnit == Units.None) {
-                                // unit too small, auto adjust
-                                partUnit = Units.Days; // largest unit we'll AutoAdjust to (i.e. Don't do weeks unless explicit)
-                            } else if (parts.Length == 3 && (partUnit == Units.Minutes || partUnit == Units.Seconds)) {
-                                // unit too small, auto adjust
-                                partUnit = Units.Hours;
-                            } else if (parts.Length == 2 && partUnit == Units.Seconds) {
-                                // unit too small, auto adjust
-                                partUnit = Units.Minutes;
+                    if (options.AllowDotSeparatedDayHours && parts.Length >= 2 && parts.Length <= 3 && parts[0].Contains('.')) {
+                        var p0 = parts[0];
+                        if (p0.Count(ch => ch == '.') > 1) {
+                            if (p0.TrimEnd('.').Count(ch => ch == '.') > 1) { // give one last chance.. remove trailing dots
+                                throw new FormatException("Multiple dots. Don't know where to cut days and hour.");
+                            } else {
+                                p0 = p0.TrimEnd('.');
                             }
                         }
 
-                        Console.WriteLine($"post AutoUnits: {partUnit}");
+                        parts = p0.Split('.', 2).Concat(parts.Skip(1)).ToArray();
+                        partUnit = Units.Days;
 
-                        // Weeks, Days, Hours, Minutes, Seconds, Milliseconds
-                        foreach (var part in parts) {
-                            Console.WriteLine($"colon bit: {part} -- {partUnit}");
-
-                            if (partUnit == Units.ErrorTooManyUnits || partUnit == Units.Milliseconds) {
-                                timeSpans = foundTimeSpans.ToArray();
-                                return false; // too many colons
-                            }
-
-                            //double dPart = 0;
-                            //if (!string.IsNullOrWhiteSpace(part) && !double.TryParse(part, options.NumberStyles, options.FormatProvider, out dPart)) {
-                            decimal dPart = 0;
-                            if (!string.IsNullOrWhiteSpace(part) && !decimal.TryParse(part, options.NumberStyles, options.FormatProvider, out dPart)) {
-                                timeSpans = foundTimeSpans.ToArray();
-                                return false; // failed to parse number (as double). Empty strings treated as 0.
-                            }
-                            builder = builder.AddUnit(dPart, partUnit);
-                            partUnit = Units.None; // automatically choose future units
-                            if (builder.CompleteTimeSpan != null) {
-                                Console.WriteLine($"found colonish unit {builder.CompleteTimeSpan.Value}");
-                                foundTimeSpans.Add(builder.CompleteTimeSpan.Value);
-                                builder.CompleteTimeSpan = null;
-                            }
-
-                            Console.WriteLine($"WIP: {builder.TimeSpan}");
-
+                    } else if (options.AutoUnitsIfTooManyColons) {
+                        if (parts.Length == 4 && partUnit >= Units.Hours && partUnit < Units.Milliseconds || partUnit == Units.None) {
+                            // unit too small, auto adjust
+                            partUnit = Units.Days; // largest unit we'll AutoAdjust to (i.e. Don't do weeks unless explicit)
+                        } else if (parts.Length == 3 && (partUnit == Units.Minutes || partUnit == Units.Seconds)) {
+                            // unit too small, auto adjust
+                            partUnit = Units.Hours;
+                        } else if (parts.Length == 2 && partUnit == Units.Seconds) {
+                            // unit too small, auto adjust
+                            partUnit = Units.Minutes;
                         }
-                        Console.WriteLine($"done with colon bits");
-                        builder?.EndParsingColonishNumber();
+                    }
 
-                    } else {
+                    Console.WriteLine($"post AutoUnits: {partUnit}");
 
-                        //double parsedNumber;
-                        //bool numberSuccess = double.TryParse(number, options.NumberStyles, options.FormatProvider, out parsedNumber);
-                        decimal parsedNumber;
-                        bool numberSuccess = decimal.TryParse(number, options.NumberStyles, options.FormatProvider, out parsedNumber);
+                    // Weeks, Days, Hours, Minutes, Seconds, Milliseconds
+                    foreach (var part in parts) {
+                        Console.WriteLine($"colon bit: {part} -- {partUnit}");
 
-                        if (!numberSuccess) {
-                            Console.WriteLine($" - failed to parse number:'{parsedNumber}'");
-                            timeSpans = foundTimeSpans.ToArray();
-                            return false;
+                        if (partUnit == Units.ErrorTooManyUnits || partUnit == Units.Milliseconds) {
+                            timeSpans = builder.FinalSpans(); // foundTimeSpans.ToArray();
+                            return false; // too many colons
                         }
 
-                        //bool ok = builder.AddUnit(parsedNumber, suffixUnits);
-                        builder = builder.AddUnit(parsedNumber, suffixUnits);
-                        suffixUnits = Units.None; // automatically choose future units
-
-                        if (builder.CompleteTimeSpan != null) {
-                            Console.WriteLine($"found noncolonish unit {builder.CompleteTimeSpan.Value}");
-                            foundTimeSpans.Add(builder.CompleteTimeSpan.Value);
-                            builder.CompleteTimeSpan = null;
+                        //double dPart = 0;
+                        //if (!string.IsNullOrWhiteSpace(part) && !double.TryParse(part, options.NumberStyles, options.FormatProvider, out dPart)) {
+                        decimal dPart = 0;
+                        if (!string.IsNullOrWhiteSpace(part) && !decimal.TryParse(part, options.NumberStyles, options.FormatProvider, out dPart)) {
+                            timeSpans = builder.FinalSpans(); // foundTimeSpans.ToArray();
+                            return false; // failed to parse number (as double). Empty strings treated as 0.
                         }
+                        builder = builder.AddUnit(dPart, partUnit);
+                        partUnit = Units.None; // automatically choose future units
+
+                        if (builder.DoneFinding) {
+                            timeSpans = builder.FinalSpans();
+                            return true;
+                        }
+
+                        Console.WriteLine($"WIP: {builder.TimeSpan}");
 
                     }
+                    Console.WriteLine($"done with colon bits");
+                    builder = builder?.EndParsingColonishNumber();
+
+                } else {
+
+                    //double parsedNumber;
+                    //bool numberSuccess = double.TryParse(number, options.NumberStyles, options.FormatProvider, out parsedNumber);
+                    decimal parsedNumber;
+                    bool numberSuccess = decimal.TryParse(number, options.NumberStyles, options.FormatProvider, out parsedNumber);
+
+                    if (!numberSuccess) {
+                        Console.WriteLine($" - failed to parse number:'{parsedNumber}'");
+                        timeSpans = builder.FinalSpans();
+                        return false;
+                    }
+
+                    //bool ok = builder.AddUnit(parsedNumber, suffixUnits);
+                    builder = builder.AddUnit(parsedNumber, suffixUnits);
+                    suffixUnits = Units.None; // automatically choose future units
+
+                    if (builder.DoneFinding) {
+                        timeSpans = builder.FinalSpans();
+                        return true;
+                    }
+
                 }
-
-                var final = builder?.Final();
-                if (final != null) {
-                    foundTimeSpans.Add(final.Value);
-                    builder.CompleteTimeSpan = null;
-                }
-
-                timeSpans = foundTimeSpans.ToArray();
-                return true;
-
-            } catch (Exception e) {
-                Console.WriteLine($" - exception:'{e}'");
-                timeSpans = foundTimeSpans.ToArray();
-                return false;
             }
+
+            timeSpans = builder.FinalSpans();
+            return true;
         }
 
         /// <summary>
@@ -382,7 +380,7 @@ namespace TimeSpanParserUtil {
             return TryParsePrefixed(text, prefixes, null, out matches);
         }
 
-        public static bool TryParsePrefixed(string text, string[] prefixes, TimeSpanParserOptions options,  out Dictionary<string, TimeSpan?> matches) {
+        public static bool TryParsePrefixed(string text, string[] prefixes, TimeSpanParserOptions options, out Dictionary<string, TimeSpan?> matches) {
             //string[] prefixes = new string[] { "for", "in", "delay", "wait" };
 
             //TODO: rename "prefixes" to "parameter names" or "keys" or something
@@ -393,8 +391,8 @@ namespace TimeSpanParserUtil {
 
             matches = new Dictionary<string, TimeSpan?>();
 
-            //string pattern = @"\b(for|in|delay|now|wait)\b"; //TODO: build from prefixes
 
+            //e.g. string pattern = @"\b(for|in|delay|now|wait)\b"; 
             StringBuilder pattern = new StringBuilder();
             pattern.Append(@"\b("); // must be in (brackets) to be included in results of regex split
             //pattern.Append(@"?<keyword>"); // name group
@@ -404,51 +402,41 @@ namespace TimeSpanParserUtil {
             var regex = new Regex(pattern.ToString(), RegexOptions.IgnoreCase);
             string[] parts = regex.Split(text);
             //Console.WriteLine("parts: " + string.Join(" | ", parts));
+            int nonkeywordCounter = 0;
+            string currentPrefix = null;
 
-            for (int i=0; i < parts.Length; i++) {
-                var part = parts[i];
-                var lc = part.ToLowerInvariant();
-                if (prefixes.Contains(lc)) {
-                    if (i + 1 < parts.Length) {
-                        var lookahead = parts[i + 1];
-                        var lookaheadLc = lookahead.ToLowerInvariant();
-                        if (!prefixes.Contains(lookaheadLc)) {
-                            // try lookahead as timespan
-                            if (TryParse(lookahead, options, out TimeSpan timespan)) {
-                                matches[lc] = timespan;
+            try {
+                for (int i = 0; i < parts.Length; i++) {
+                    var part = parts[i];
+                    var lc = part.ToLowerInvariant();
+                    if (prefixes.Contains(lc)) {
+                        matches[lc] = null;
+                        currentPrefix = lc;
 
-                                i++;
-                                continue;
-                            } else {
-                                matches[lc] = null;
+                    } else {
+                        if (DoParseMutliple(part, out TimeSpan[] timespans, options)) {
+                            for (int j = 0; j < timespans.Length; j++) {
+                                string prefix = currentPrefix ?? nonkeywordCounter++.ToString();
 
-                                i++; // Still skip the next part anyway because we know it's not a keyword. 
-                                     // But in future might want to still process it...?
-
-                                continue;
+                                matches[prefix] = timespans[j];
+                                currentPrefix = null;
                             }
 
+                        } else {
+                            if (options.FailOnUnitlessNumber)
+                                return false;
                         }
                     }
-
-                    // return prefix keyword without timespan
-                    matches[lc] = null;
-                } else if (i==0) {
-                    // first part before any prefixes
-
-                    if (TryParse(part, out TimeSpan[] timespans, options)) {
-                        for (int j = 0; j < timespans.Length; j++) {
-                            matches[j.ToString()] = timespans[j];
-                        }
-                    }
-                } else {
-                    // ignore non-keyword parameters except for first
-
                 }
-
+            } catch (ArgumentException e) {
+                //matches = null;
+                if (options.FailOnUnitlessNumber)
+                    return false;
             }
+            
 
             return (matches.Count > 0);
+            
         }
     }
 }

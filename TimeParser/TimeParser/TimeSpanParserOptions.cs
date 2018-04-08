@@ -52,6 +52,10 @@ namespace TimeSpanParserUtil
         // Otherwise it will parse a unitless "0" only for the first unit, and not allow further units
         public bool AllowUnitlessZero = true;
 
+        // Apart from zeros, covered above, should unitless numbers with no default unit cause parsing to fail?
+        // If false, just ignore them
+        public bool FailOnUnitlessNumber = true;
+
         //TODO: options as binary flags?
 
         // default to very permissive, but do not: AllowTrailingSign, AllowParentheses, AllowCurrencySymbol

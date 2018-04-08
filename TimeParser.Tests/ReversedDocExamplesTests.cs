@@ -22,7 +22,8 @@ namespace TimeSpanParserUtil.Tests {
         [DataRow("00:30:00", 0, 0, 30, 0, 0)] // c
         [DataRow("3.17:25:30.5000000", 3, 17, 25, 30, 500)] // c
         [DataRow("1:3:16:50.5", 1, 3, 16, 50, 500)] // g
-        [DataRow("1:3:16:50.599", 1, 3, 16, 50, 599)] // g // fails if seconds is parsed as a double (actual: 1.03:16:50.5989999), but ok now it's decimal
+        [DataRow("1:3:16:50.599", 1, 3, 16, 50, 599)] // g // fails if seconds is parsed as a double ("actual: 1.03:16:50.5989999"), but ok now it's decimal
+        [DataRow("1d 3h 16m 50.599s", 1, 3, 16, 50, 599)] // above converted to noncoloned format to be sure
         [DataRow("0:18:30:00.0000000", 0, 18, 30, 0, 0)] // G
         public void ReversedFormatStringUS(string parseThis, int days, int hours, int minutes, int seconds, int milliseconds) {
             var expected = new TimeSpan(days, hours, minutes, seconds, milliseconds);
@@ -55,6 +56,30 @@ namespace TimeSpanParserUtil.Tests {
             Assert.IsTrue(success);
             Assert.AreEqual(expected, actual);
         }
+
+        
+        [TestMethod]
+        [DataRow("10675199:2:48:05,4775807")] // French is fine
+        [DataRow("10675199.02:48:05.4775807")] // But US with FR parser fails
+        public void FutureParseUSFormatWithFR(string parseThis) {
+            //TODO: make this pass by fixing parser to try French format first, then fallback to invariant. Perhaps allowing a mix if unambiguous
+
+            Console.WriteLine(parseThis);
+
+            var fr = new CultureInfo("fr-FR");
+            var options = new TimeSpanParserOptions();
+            options.FormatProvider = fr;
+
+            // TimeSpan can parse it with fr (so why can't we?)
+            var expected = TimeSpan.Parse(parseThis, fr); 
+
+            TimeSpan actual;
+            bool success = TimeSpanParser.TryParse(parseThis, options, out actual);
+
+            Assert.IsTrue(success);
+            Assert.AreEqual(expected, actual);
+        }
+
 
         // examples from https://msdn.microsoft.com/en-us/library/system.timespan.ticks(v=vs.110).aspx
 
