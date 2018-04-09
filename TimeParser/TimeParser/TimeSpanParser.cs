@@ -341,6 +341,7 @@ namespace TimeSpanParserUtil {
                 if (last != null) {
                     var newToken = last.TryMerge(token);
                     if (newToken == null) {
+
                         timespans.Add(last.ToTimeSpan());
                         last = token;
                     } else {

@@ -55,7 +55,6 @@ namespace TimeSpanParserUtil.Tests {
         [TestMethod]
         public void AntiSplitTest1() {
             var options = new TimeSpanParserOptions();
-            options.DisallowRepeatedUnit = false;
             options.StrictBigToSmall = false;
 
             var success = TimeSpanParser.TryParse("10 minutes 15 seconds 20 minutes 30 seconds", out TimeSpan[] timeSpans, options);
@@ -76,5 +75,18 @@ namespace TimeSpanParserUtil.Tests {
             Assert.AreEqual(timeSpans.Length, 1);
             Assert.AreEqual(timeSpans[0], TimeSpan.Parse("10.20:30:15"));
         }
+
+        [TestMethod]
+        public void AntiSplitTest3() {
+            var options = new TimeSpanParserOptions();
+            options.StrictBigToSmall = false;
+
+            var success = TimeSpanParser.TryParse("10 days 15 seconds 20:00:00 10:00 minutes 00:20:00", out TimeSpan[] timeSpans, options);
+
+            Assert.IsTrue(success);
+            Assert.AreEqual(timeSpans.Length, 1);
+            Assert.AreEqual(timeSpans[0], TimeSpan.Parse("10.20:30:15"));
+        }
+
     }
 }
