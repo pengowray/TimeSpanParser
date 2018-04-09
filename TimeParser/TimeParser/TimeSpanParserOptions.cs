@@ -34,21 +34,22 @@ namespace TimeSpanParserUtil
 
         // If true then allow "3 hours 5 seconds" but not "5 seconds 3 hours" 
         // (causes AddUnit() to return false, signally an error or to divides into multiple TimeSpans)
-        public bool StrictBigToSmall = true; 
+        public bool StrictBigToSmall = true;
 
+        // [remove as redundant to StrictBigToSmall]
         // If false, allow "1h 10m 5m" to equal 1h15m;
         // If true, cause an error (or divide into multiple TimeSpans) when a unit is repeated.
         // If StrictBigToSmall is true then it basically overrides this as if it were true anyway.
-        public bool DisallowRepeatedUnit = true;
+        // public bool DisallowRepeatedUnit = true;
 
-        // If true, treat seconds with decimal point as milliseconds for sake of DisallowRepeatedUnit
-        // if true and DisallowRepeatedUnit, disallow "10.5 seconds 200 milliseconds", otherwise treat it like "10.7 seconds"
+        // If true, treat seconds with decimal point as milliseconds for sake of StrictBigToSmall
+        // if true and StrictBigToSmall, disallow "10.5 seconds 200 milliseconds", otherwise treat it like "10.7 seconds"
         public bool DecimalSecondsCountsAsMilliseconds = true;
 
         // If true, a 0 or 0:00 by itself doesn't need any units. (todo: just say "see GuideTests for details)
         // If true, "0" will be parsed as TimeSpan.Zero even if UncolonedDefault = Units.None. 
         // Likewise "0:00" or "0:0:0:0" etc will be parsed even if and ColonedDefault is set to Units.None.
-        // if !DisallowRepeatedUnit && !StrictBigToSmall, then multiple zeros can be parsed (and ignored) in the same timespan. 
+        // if !StrictBigToSmall, then multiple zeros can be parsed (and ignored) in the same timespan. 
         // Otherwise it will parse a unitless "0" only for the first unit, and not allow further units
         public bool AllowUnitlessZero = true;
 
