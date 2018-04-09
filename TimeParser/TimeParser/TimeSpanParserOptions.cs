@@ -46,16 +46,17 @@ namespace TimeSpanParserUtil
         // if true and StrictBigToSmall, disallow "10.5 seconds 200 milliseconds", otherwise treat it like "10.7 seconds"
         public bool DecimalSecondsCountsAsMilliseconds = true;
 
-        // If true, a 0 or 0:00 by itself doesn't need any units. (todo: just say "see GuideTests for details)
+        // Apart AllowUnitlessZero, covered below, 
+        // should unitless numbers with no default unit cause parsing to fail?
+        // If false, just ignore them
+        public bool FailOnUnitlessNumber = true;
+
+        // If true, a 0 or 0:00 by itself doesn't need any units, even if FailOnUnitlessNumber is true. (todo: just say "see GuideTests for details")
         // If true, "0" will be parsed as TimeSpan.Zero even if UncolonedDefault = Units.None. 
         // Likewise "0:00" or "0:0:0:0" etc will be parsed even if and ColonedDefault is set to Units.None.
         // if !StrictBigToSmall, then multiple zeros can be parsed (and ignored) in the same timespan. 
         // Otherwise it will parse a unitless "0" only for the first unit, and not allow further units
         public bool AllowUnitlessZero = true;
-
-        // Apart from zeros, covered above, should unitless numbers with no default unit cause parsing to fail?
-        // If false, just ignore them
-        public bool FailOnUnitlessNumber = true;
 
         //TODO: options as binary flags?
 

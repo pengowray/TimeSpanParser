@@ -40,7 +40,6 @@ namespace TimeSpanParserUtil.Tests {
         [DataRow("Elapsed time: 0:00:00.0001497")] // 2
         [DataRow("1:10 2:20")] // 7
         [DataRow("1:10 in 2:20 for 3:30")]
-
         //[DataRow("Elapsed time: 0:00:00.0001497")]
         public void PrefixDummyTest(string testString) {
             Console.WriteLine(testString);
@@ -57,6 +56,9 @@ namespace TimeSpanParserUtil.Tests {
         }
 
         public static string PrettyPrintTimeDict(Dictionary<string, TimeSpan?> dict, string variableName) {
+            if (dict == null)
+                return "null";
+
             char quot = '"';
             return string.Join("\n", dict
                 .Select(m => $"{variableName}[{quot}{m.Key}{quot}] = {PrettyPrintTimeSpan(m.Value)};"));
@@ -141,7 +143,19 @@ namespace TimeSpanParserUtil.Tests {
         }
 
         [TestMethod]
-        public void PrefixTest_4_nofailzero() {
+        public void PrefixTest_4_zero() {
+            string parseThis = "10:20 0 now";
+
+            var expected = new Dictionary<string, TimeSpan?>();
+            expected["0"] = TimeSpan.Parse("10:20:00");
+            expected["1"] = TimeSpan.Zero;
+            expected["now"] = null;
+
+            DoParseAndCompare(expected, parseThis, defaultOptions);
+        }
+
+        [TestMethod]
+        public void PrefixTest_4_zero_nofail() {
             string parseThis = "10:20 0 now";
 
             var expected = new Dictionary<string, TimeSpan?>();
@@ -151,6 +165,7 @@ namespace TimeSpanParserUtil.Tests {
 
             DoParseAndCompare(expected, parseThis, nofailOptions);
         }
+
 
         [TestMethod]
         public void PrefixTest_4_nofail() {

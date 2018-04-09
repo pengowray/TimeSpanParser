@@ -48,8 +48,9 @@ namespace TimeSpanParserUtil.Tests {
         }
 
         [TestMethod]
-        [DataRow("0000.00000000:00.0:0.00:00:00:00:.00.1")]
+        [DataRow("0000.00000000:00.0:0.00:00:00:00:00.1")]
         [DataRow("0:0:0:0:0:0:2")]
+        [DataRow("0.0:0:0:0:0:0:2")]
         public void ZeroOnlyFailTest(string parseThis) {
             Console.WriteLine(parseThis);
 

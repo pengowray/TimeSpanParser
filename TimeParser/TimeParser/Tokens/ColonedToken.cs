@@ -95,11 +95,14 @@ namespace TimeSpanParserUtil // TimeSpanParserUtil.TimeParser.Tokens
 
         protected bool ShouldSplitDaysHours() {
             //TODO future: throw new FormatException("Multiple dots. Don't know where to cut days and hour."); // e.g. "1.2.3" (1.2 days + 3 hours, or 1 day, 2.3 hours) // may require a special custom token or something / guessing rules... but these wouldn't be found by the initial regex anyway
+
+            //TODO: maybe should also split OneUnitToken. e.g. 1.7 days ? maybe not
+
             var expected = GivenOrDefaultOrZeroUnits();
-            return (options.AllowDotSeparatedDayHours && firstColumnContainsDot && firstColumnRightHalf != null)
-                && ((colonedColumns.Length == 2 && expected == Units.Hours || expected == Units.Days || expected == Units.None)
-                || colonedColumns.Length == 3)
-                && colonedColumns[0].HasValue; // though presumably it does because firstColumnContainedPeriod
+            return (options.AllowDotSeparatedDayHours && firstColumnContainsDot && firstColumnRightHalf != null && colonedColumns[0].HasValue) // though presumably it has a value because firstColumnContainedPeriod
+                && (expected == Units.Days
+                 || (colonedColumns.Length == 3)
+                 || (colonedColumns.Length == 2 && expected == Units.Hours || expected == Units.None));
         }
 
         protected bool ShouldIgnoreStartingColon() {
@@ -115,8 +118,6 @@ namespace TimeSpanParserUtil // TimeSpanParserUtil.TimeParser.Tokens
                 startingColonRemovedColumns = colonedColumns.Skip(1).ToArray();
 
                 Autounit = AutoUnits();
-                calcDone = true;
-                return;
 
             } else if (ShouldSplitDaysHours()) {
                 List<decimal?> splitDays = new List<decimal?>();
@@ -130,17 +131,16 @@ namespace TimeSpanParserUtil // TimeSpanParserUtil.TimeParser.Tokens
 
                 Autounit = Units.Days;
                 calcDone = true;
-                return;
-                
-            } else {
+                return; 
 
-                Autounit = AutoUnits();
-                calcDone = true;
             }
+
+            Autounit = AutoUnits();
+            calcDone = true;
+
         }
 
         protected Units AutoUnits() {
-
             if (!options.AutoUnitsIfTooManyColons) {
                 return Units.None;
             }
@@ -185,8 +185,11 @@ namespace TimeSpanParserUtil // TimeSpanParserUtil.TimeParser.Tokens
         protected override Units SmallestUnit() {
             var start = BestGuessUnits();
 
-            if (start == Units.None)
+            if (start == Units.None) {
+                if (IsZero())
+                    return Units.ZeroOnly;
                 return Units.None;
+            }
 
             if (start == Units.ZeroOnly)
                 return Units.ZeroOnly;
@@ -195,7 +198,12 @@ namespace TimeSpanParserUtil // TimeSpanParserUtil.TimeParser.Tokens
             if (columns == null)
                 return Units.None;
 
-            return NextSmallestUnit(start, columns.Length - 1);
+            var smallestColumn = NextSmallestUnit(start, columns.Length - 1);
+
+            if (smallestColumn == Units.ErrorTooManyUnits && IsZero())
+                return Units.ZeroOnly;
+
+            return smallestColumn;
         }
 
     }

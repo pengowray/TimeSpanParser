@@ -336,16 +336,28 @@ namespace TimeSpanParserUtil {
 
             List<TimeSpan?> timespans = new List<TimeSpan?>();
             ParserToken last = null;
+            bool willSucceed = true;
             foreach (ParserToken token in tokens) {
+                if (token.IsUnitlessFailure() || token.IsOtherFailure()) {
+                    Console.WriteLine($"wont succeed..." + (!options.FailOnUnitlessNumber ? "or actually it might" : ""));
+                    //throw new ArgumentException("failed to parse because of a unitless number.");
+                    willSucceed = false;
+                    if (last != null)
+                        timespans.Add(last.ToTimeSpan());
+                    last = null;
+                    continue;
+                }
 
                 if (last != null) {
-                    var newToken = last.TryMerge(token);
-                    if (newToken == null) {
+                    bool success = last.TryMerge(token, out ParserToken newToken);
+                    if (!success)
+                        throw new ArgumentException("failed to parse. probably because of a unitless number.");
 
+                    if (newToken == null) {
                         timespans.Add(last.ToTimeSpan());
                         last = token;
-                    } else {
 
+                    } else {
                         last = newToken;
                     }
                     
@@ -358,7 +370,7 @@ namespace TimeSpanParserUtil {
                 timespans.Add(last.ToTimeSpan());
 
             timeSpans = timespans.Where(t => t.HasValue).Select(t => t.Value).ToArray(); // just the nonnull for now
-            return true;
+            return !options.FailOnUnitlessNumber || willSucceed;
         }
 
         /// <summary>
@@ -434,10 +446,9 @@ namespace TimeSpanParserUtil {
                 if (options.FailOnUnitlessNumber)
                     return false;
             }
-            
 
-            return (matches.Count > 0);
-            
+
+            return true; //return (matches.Count > 0);
         }
     }
 }

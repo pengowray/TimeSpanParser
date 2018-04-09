@@ -23,6 +23,18 @@ namespace TimeSpanParserUtil {
 
         public abstract bool UsesColonedDefault();
 
+        public virtual bool IsUnitlessFailure() {
+            var units = BestGuessUnits();
+            return !(units.IsTimeUnit() || units == Units.ZeroOnly);
+            // what about IsNull() ?
+        }
+
+        public virtual bool IsOtherFailure() {
+            var smallest = SmallestUnit();
+
+            return (!smallest.IsTimeUnit() && smallest != Units.ZeroOnly);
+        }
+
         protected virtual Units GivenOrDefaultOrZeroUnits() {
             if (GivenUnit != Units.None)
                 return GivenUnit;
@@ -35,7 +47,7 @@ namespace TimeSpanParserUtil {
                 def = options.UncolonedDefault;
             }
 
-            if (def == Units.None && IsZero())
+            if (def == Units.None && IsZero() && options.AllowUnitlessZero)
                 return Units.ZeroOnly;
 
             return def; // TODO: check is valid (don't give error values?)
@@ -47,13 +59,28 @@ namespace TimeSpanParserUtil {
         }
 
 
-        //public Units NextUnit() {
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="otherNext"></param>
+        /// <param name="merged"></param>
+        /// <returns>Success:
+        ///     False: there was a failure and parsing should fail. 
+        ///     True && merged == null: did not merge, but continue on.
+        ///     True && merged != null: did merge, continue on.</returns>
+        public bool TryMerge(ParserToken otherNext, out ParserToken merged) {
+            if (otherNext == null) {
+                merged = null;
+                return false; // shouldn't happen?
+            }
 
-        //}
+            var otherUnits = otherNext.BestGuessUnits();
 
-        public ParserToken TryMerge(ParserToken otherNext) {
-            if (otherNext == null)
-                return null;
+            if (otherUnits == Units.None || otherUnits == Units.ErrorTooManyUnits) { // && options.FailOnUnitlessNumber
+                Console.WriteLine("error thing");
+                merged = null;
+                return false;
+            }
 
             var otherTimeSpan = otherNext.ToTimeSpan();
             if (IsInitialNegative())
@@ -61,9 +88,8 @@ namespace TimeSpanParserUtil {
 
             if (options.StrictBigToSmall) {
                 var smallestUnit = SmallestUnit();
-                var otherUnits = otherNext.BestGuessUnits();
 
-                Console.WriteLine($"comparing: {ToTimeSpan()} ({smallestUnit}) & {otherNext.ToTimeSpan()} ({otherUnits})");
+                Console.WriteLine($"combining: {ToTimeSpan()?.ToString() ?? "null"} ({smallestUnit}) & {otherNext.ToTimeSpan()?.ToString() ?? "null"} ({otherUnits})");
                 if (otherUnits.IsTimeUnit() && smallestUnit.IsTimeUnit() && otherUnits > smallestUnit) {
 
                     var newTokenWithSmallest = new TimeSpanToken();
@@ -73,10 +99,12 @@ namespace TimeSpanParserUtil {
                     newTokenWithSmallest.GivenUnit = BestGuessUnits(); // shouldn't matter
                     newTokenWithSmallest.initialNegative = IsInitialNegative();
 
-                    return newTokenWithSmallest;
+                    merged = newTokenWithSmallest;
+                    return true;
                 }
 
-                return null;
+                merged = null;
+                return true;
             }
 
             var newToken = new TimeSpanToken();
@@ -86,7 +114,8 @@ namespace TimeSpanParserUtil {
 
             //newToken.smallest = otherNext.SmallestUnit(); // shouldn't matter because not StrictBigToSmall
             //newToken.GivenUnit = BestGuessUnits(); // shouldn't matter
-            return newToken;
+            merged = newToken;
+            return true;
         }
 
         public abstract TimeSpan? ToTimeSpan();
@@ -100,7 +129,7 @@ namespace TimeSpanParserUtil {
                 return Units.None;
 
             if (unit == Units.ZeroOnly) {
-                return Units.None;
+                return Units.ZeroOnly; // return Units.None;
             }
 
             if (unit.IsTimeUnit()) {
