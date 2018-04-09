@@ -96,13 +96,13 @@ namespace TimeSpanParserUtil // TimeSpanParserUtil.TimeParser.Tokens
         protected bool ShouldSplitDaysHours() {
             //TODO future: throw new FormatException("Multiple dots. Don't know where to cut days and hour."); // e.g. "1.2.3" (1.2 days + 3 hours, or 1 day, 2.3 hours) // may require a special custom token or something / guessing rules... but these wouldn't be found by the initial regex anyway
 
-            //TODO: maybe should also split OneUnitToken. e.g. 1.7 days ? maybe not
+            //TODO: maybe should also split OneUnitToken. e.g. 1.7 days ? maybe require another option
 
             var expected = GivenOrDefaultOrZeroUnits();
             return (options.AllowDotSeparatedDayHours && firstColumnContainsDot && firstColumnRightHalf != null && colonedColumns[0].HasValue) // though presumably it has a value because firstColumnContainedPeriod
                 && (expected == Units.Days
-                 || (colonedColumns.Length == 3)
-                 || (colonedColumns.Length == 2 && expected == Units.Hours || expected == Units.None));
+                 || ((colonedColumns.Length == 2 | colonedColumns.Length == 3) 
+                    && (expected == Units.Hours || expected == Units.None)));
         }
 
         protected bool ShouldIgnoreStartingColon() {

@@ -25,7 +25,11 @@ namespace TimeSpanParserUtil {
 
         public virtual bool IsUnitlessFailure() {
             var units = BestGuessUnits();
-            return !(units.IsTimeUnit() || units == Units.ZeroOnly);
+            bool unitless = !(units.IsTimeUnit() || units == Units.ZeroOnly);
+            bool ambiguous = !IsZero() && (units == Units.Months || units == Units.Years);
+
+            return unitless || ambiguous;
+
             // what about IsNull() ?
         }
 

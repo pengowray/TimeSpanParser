@@ -41,7 +41,7 @@ namespace TimeSpanParserUtil.Tests {
             Console.WriteLine(parseThis);
 
             var expected = TimeSpan.Zero;
-            bool success = TimeSpanParser.TryParse(parseThis, timeSpan: out TimeSpan actual); ;
+            bool success = TimeSpanParser.TryParse(parseThis, timeSpan: out TimeSpan actual);
 
             Assert.IsTrue(success);
             Assert.AreEqual(expected, actual);
@@ -57,6 +57,38 @@ namespace TimeSpanParserUtil.Tests {
             bool success = TimeSpanParser.TryParse(parseThis, timeSpan: out TimeSpan actual);
             Assert.IsFalse(success);
         }
+
+        [TestMethod]
+        [DataRow("1 year")]
+        [DataRow("2 months")]
+        [DataRow("1.1 years")]
+        [DataRow("3.33 months")]
+        [DataRow("1.2:33:44 years")]
+        [DataRow("10:33:44 months")]
+        public void YearMonthFailTests(string parseThis) {
+            Console.WriteLine(parseThis);
+
+            bool success = TimeSpanParser.TryParse(parseThis, timeSpan: out TimeSpan actual);
+            Assert.IsFalse(success);
+        }
+
+        [TestMethod]
+        [DataRow("0 years")]
+        [DataRow("0:00 months")]
+        [DataRow("0:0:0:0:0:0 y")]
+        [DataRow("0 years 0 months 0 days")]
+        [DataRow("0000.00000000:00.0:0.00:00.00 years")]
+        [DataRow("0:0:0:0:0:0:0:0:0:0.0 years")]
+        public void ZeroOnlyYearMonth(string parseThis) {
+            Console.WriteLine(parseThis);
+
+            var expected = TimeSpan.Zero;
+            bool success = TimeSpanParser.TryParse(parseThis, timeSpan: out TimeSpan actual);
+
+            Assert.IsTrue(success);
+            Assert.AreEqual(expected, actual);
+        }
+
 
 
         [TestMethod]
