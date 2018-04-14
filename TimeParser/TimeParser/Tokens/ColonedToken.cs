@@ -74,7 +74,13 @@ namespace TimeSpanParserUtil // TimeSpanParserUtil.TimeParser.Tokens
             TimeSpan sum;
             foreach (var c in columns) {
                 if (c != null) {
-                    //TODO: error if (!units.IsTimeUnit()) and not ZeroOnly etc ?
+                    if (!first && c != 0 && units > Units.Seconds) {
+                        throw new FormatException("Too many units or colons");
+                    }
+
+                    if (!units.IsTimeUnit() && units != Units.ZeroOnly && c != 0) {
+                        throw new FormatException("Bad units: " + units);
+                    }
 
                     if (!first && flip) {
                         sum += GetValue(-c, units).Value;

@@ -67,6 +67,7 @@ namespace TimeSpanParserUtil.Tests {
         //[DataRow("On this day, 25.0 years, 300.0 months, 1,304.4 weeks, 9,130.9 days, 219,141 hours, 13,148,477 minutes, 788,908,652 seconds, myself and 63 other individuals began training at the #1 Fire Academy in this Universe", 0, 0, 0, 0, 0)]
         //[DataRow("half-life of beryllium-13" )] // (larcin) 2.7×10−21 s
         [DataRow("Just 500 trillion nanoseconds!", 0, 0, 0, 500000, 0)] // 5.78703703703703809 days
+        //[DataRow("「00:00:00;00」")] // ;00 frames (video editing) z
         public void FutureWildTests(string parseThis, int days, int hours, int minutes, int seconds, int milliseconds) {
             var expected = new TimeSpan(days, hours, minutes, seconds, milliseconds);
             TimeSpan actual = TimeSpanParser.Parse(parseThis);
