@@ -34,6 +34,7 @@ namespace TimeSpanParserUtil
             return smallest;
         }
 
+        //delete me
         protected Units SmallestUnitv2() {
             if (!timespan.HasValue)
                 return Units.None;

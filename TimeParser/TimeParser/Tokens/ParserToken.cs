@@ -81,7 +81,7 @@ namespace TimeSpanParserUtil {
             var otherUnits = otherNext.BestGuessUnits();
 
             if (otherUnits == Units.None || otherUnits == Units.ErrorTooManyUnits) { // && options.FailOnUnitlessNumber
-                Console.WriteLine("error thing");
+                //Console.WriteLine("error thing");
                 merged = null;
                 return false;
             }
@@ -93,7 +93,7 @@ namespace TimeSpanParserUtil {
             if (options.StrictBigToSmall) {
                 var smallestUnit = SmallestUnit();
 
-                Console.WriteLine($"combining: {ToTimeSpan()?.ToString() ?? "null"} ({smallestUnit}) & {otherNext.ToTimeSpan()?.ToString() ?? "null"} ({otherUnits})");
+                //Console.WriteLine($"combining: {ToTimeSpan()?.ToString() ?? "null"} ({smallestUnit}) & {otherNext.ToTimeSpan()?.ToString() ?? "null"} ({otherUnits})");
                 if (otherUnits.IsTimeUnit() && smallestUnit.IsTimeUnit() && otherUnits > smallestUnit) {
 
                     var newTokenWithSmallest = new TimeSpanToken();
@@ -189,7 +189,17 @@ namespace TimeSpanParserUtil {
                 */
 
             } else if (unit == Units.Milliseconds) {
-                return TimeSpan.FromMilliseconds((double)time);
+                //return TimeSpan.FromMilliseconds((double)time);
+                long ticks = (long)(time * 10_000);
+                return TimeSpan.FromTicks(ticks);
+
+            } else if (unit == Units.Microseconds) {
+                long ticks = (long)(time * 10);
+                return TimeSpan.FromTicks(ticks);
+
+            } else if (unit == Units.Nanoseconds) {
+                long ticks = (long)(time / 100);
+                return TimeSpan.FromTicks(ticks);
 
             } else if (unit == Units.ZeroOnly) {
                 // do nothing

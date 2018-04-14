@@ -59,8 +59,9 @@ namespace TimeSpanParserUtil.Tests {
         
         [TestMethod]
         [DataRow("10675199:2:48:05,4775807")] // French is fine
-        [DataRow("10675199.02:48:05.4775807")] // But US with FR parser fails
-        [DataRow("1.12:24:02", 1, 12, 23, 62, 0)]
+        [DataRow("10675199.02:48:05.4775807")] // But Constant ("c") format with FR parser fails
+        [DataRow("1.12:24:02", 1, 12, 23, 62, 0)] // Constant ("c") format again
+        [DataRow("1:12:24:02.04", 1, 12, 23, 62, 40)] // US format 
         public void FutureParseUSFormatWithFR(string parseThis) {
             //TODO: make this pass by fixing parser to try French format first, then fallback to invariant. Perhaps allowing a mix if unambiguous
 
@@ -85,21 +86,33 @@ namespace TimeSpanParserUtil.Tests {
 
         [TestMethod]
         [DataRow("00:00:00.0000001", 1)]
-        [DataRow("128.17:30:33.3444555", 111222333444555)]
+        [DataRow("128.17:30:33.3444555", 111_222_333_444_555)]
         [DataRow("20.84745602 days",    18_012_202_000_000)]
         [DataRow("20.84745602 days",    18_012_202_000_000)]
         [DataRow("20.20:20:20.2000000", 18_012_202_000_000)]
+        // examples containing comma separators:
+        [DataRow("219,338,580,000,000,000 nanoseconds", 2_193_385_800_000_000)]
+        [DataRow("3,655,643.00 minutes", 2_193_385_800_000_000)]
+        [DataRow("219,338,580.00 seconds", 2_193_385_800_000_000)]
+        [DataRow("2,538 days, 15 hours, 23 minutes, 0 seconds", 2_193_385_800_000_000)]
+        // without the commas:
+        [DataRow("219338580000000000 nanoseconds", 2_193_385_800_000_000)]
+        [DataRow("3655643.00 minutes", 2_193_385_800_000_000)]
+        [DataRow("219338580.00 seconds", 2_193_385_800_000_000)]
+        [DataRow("2538 days, 15 hours, 23 minutes, 0 seconds", 2_193_385_800_000_000)]
         public void TimeSpanTicks(string parseThis, long ticks) {
             // 10,000 ticks is one millisecond
+            //     10 ticks is one microsecond
+            //    0.01 tick is one nanosecond
+            //       100 ns is one tick
 
             var expected = new TimeSpan(ticks);
 
             var options = new TimeSpanParserOptions();
             options.FormatProvider = new CultureInfo("en-US");
 
-            TimeSpan actual;
-            bool success = TimeSpanParser.TryParse(parseThis, options, out actual);
-            Assert.IsTrue(success);
+            TimeSpan actual = TimeSpanParser.Parse(parseThis, options);
+
             Assert.AreEqual(expected, actual);
         }
 

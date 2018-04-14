@@ -13,11 +13,11 @@ namespace TimeSpanParserUtil {
     //Note: only 0 months and 0 years are allowed
     //Do not change to binary flags
     //TODO: separate ordering error value from other errors (e.g. null)
-    public enum Units { None, Error, ErrorAmbiguous, Years, Months, Weeks, Days, Hours, Minutes, Seconds, Milliseconds, ErrorTooManyUnits, ZeroOnly }
+    public enum Units { None, Error, ErrorAmbiguous, Years, Months, Weeks, Days, Hours, Minutes, Seconds, Milliseconds, Microseconds, Nanoseconds, ErrorTooManyUnits, ZeroOnly }
 
     static class UnitsExtensions {
         public static bool IsTimeUnit(this Units unit) {
-            return (unit >= Units.Years && unit <= Units.Milliseconds);
+            return (unit >= Units.Years && unit <= Units.Nanoseconds);
         }
     }
 
@@ -52,6 +52,19 @@ namespace TimeSpanParserUtil {
 
             if (_Units == null) {
                 _Units = new Dictionary<string, Units>();
+
+                _Units["ns"] = Units.Nanoseconds;
+                _Units["nanosec"] = Units.Nanoseconds;
+                _Units["nanosecs"] = Units.Nanoseconds;
+                _Units["nanosecond"] = Units.Nanoseconds;
+                _Units["nanoseconds"] = Units.Nanoseconds;
+
+                _Units["μs"] = Units.Microseconds;
+                _Units["microsec"] = Units.Microseconds;
+                _Units["microsecs"] = Units.Microseconds;
+                _Units["microsecond"] = Units.Microseconds;
+                _Units["microseconds"] = Units.Microseconds;
+
                 _Units["ms"] = Units.Milliseconds;
                 _Units["millisec"] = Units.Milliseconds;
                 _Units["millisecs"] = Units.Milliseconds;
@@ -191,7 +204,7 @@ namespace TimeSpanParserUtil {
             try {
                 return DoParseMutliple(text, out timeSpans, options, max);
             } catch (ArgumentException e) {
-                Console.WriteLine("error: " + e);
+                //Console.WriteLine("error: " + e);
                 timeSpans = null;
                 return false;
             }
@@ -223,12 +236,21 @@ namespace TimeSpanParserUtil {
             var numberFormatInfo = CultureInfo.CurrentCulture.NumberFormat;
             if (options.FormatProvider != null) numberFormatInfo = NumberFormatInfo.GetInstance(options.FormatProvider);
             string decimalSeparator = numberFormatInfo.NumberDecimalSeparator;
+            bool allowThousands = ((options.NumberStyles & NumberStyles.AllowThousands) > 0);
+            string groupSeparator = allowThousands ? 
+                Regex.Escape(numberFormatInfo.NumberGroupSeparator) : "";
             string plusMinus = numberFormatInfo.PositiveSign + numberFormatInfo.NegativeSign; // TODO
 
             if (options.AllowDotSeparatedDayHours && decimalSeparator != ".") decimalSeparator += "."; // always also need a dot for day.hour separation (unless that's off)
 
-            string zeroRegexStr = @"([+-]?:)?(([-+]?[0]*[" + Regex.Escape(decimalSeparator) + @"}]?[0]+(?:[eE][-+]?[0-9]+)?)\:?)+"; // 0:00:00 0e100 0.00:00:00:0.000:0e20:00
-            string numberRegexStr = @"([+-]?:)?(([-+]?[0-9]*[" + Regex.Escape(decimalSeparator) + @"}]?[0-9]+(?:[eE][-+]?[0-9]+)?)\:?)+";
+            string zeroRegexStr = @"([+-]?:)?(([-+]?[0"+ groupSeparator + "]*[" + Regex.Escape(decimalSeparator) + @"}]?[0]+(?:[eE][-+]?[0-9]+)?)\:?)+"; // 0:00:00 0e100 0.00:00:00:0.000:0e20:00
+            string numberRegexStr;
+            //TODO: +- at start or end depending on culture
+            if (allowThousands) {
+                numberRegexStr = @"([+-]?:)?(([-+]?([0-9]+([" + groupSeparator + "]?)(?=[0-9]))*[" + Regex.Escape(decimalSeparator) + @"}]?[0-9]+(?:[eE][-+]?[0-9]+)?)\:?)+";
+            } else {
+                numberRegexStr = @"([+-]?:)?(([-+]?[0-9]*[" + Regex.Escape(decimalSeparator) + @"}]?[0-9]+(?:[eE][-+]?[0-9]+)?)\:?)+";
+            }
 
             // regex notes:
             // - floating point numbers separated by (or ending with) with colon.
@@ -274,7 +296,7 @@ namespace TimeSpanParserUtil {
                 string suffix = text.Substring(numberEnd, suffixLength);
                 bool coloned = number.Contains(':');
 
-                Console.WriteLine($"part[{i}]: num:'{number}', suffix:'{suffix}', colon:{coloned}");
+                //Console.WriteLine($"part[{i}]: num:'{number}', suffix:'{suffix}', colon:{coloned}");
 
                 Units suffixUnits = ParseSuffix(suffix);
 
@@ -316,7 +338,7 @@ namespace TimeSpanParserUtil {
                     token.colonedColumns = parts.Select(p => ParseNumber(p, options)).ToArray();
                     tokens.Add(token);
 
-                    Console.WriteLine($"token: {token}");
+                    //Console.WriteLine($"token: {token}");
 
                 } else {
 
@@ -330,7 +352,7 @@ namespace TimeSpanParserUtil {
                     
                     tokens.Add(token);
 
-                    Console.WriteLine($"token= {token}");
+                    //Console.WriteLine($"token= {token}");
                 }
             }
 
@@ -339,7 +361,7 @@ namespace TimeSpanParserUtil {
             bool willSucceed = true;
             foreach (ParserToken token in tokens) {
                 if (token.IsUnitlessFailure() || token.IsOtherFailure()) {
-                    Console.WriteLine($"wont succeed..." + (!options.FailOnUnitlessNumber ? "or actually it might" : ""));
+                    //Console.WriteLine($"wont succeed..." + (!options.FailOnUnitlessNumber ? "or actually it might" : ""));
                     //throw new ArgumentException("failed to parse because of a unitless number.");
                     willSucceed = false;
                     if (last != null)
@@ -442,7 +464,7 @@ namespace TimeSpanParserUtil {
                 }
             } catch (ArgumentException e) {
                 //matches = null;
-                Console.WriteLine(e);
+                //Console.WriteLine(e);
                 if (options.FailOnUnitlessNumber)
                     return false;
             }
