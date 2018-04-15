@@ -10,7 +10,7 @@ using TimeSpanParserUtil;
 namespace TimeSpanParserUtil.Tests {
 
     [TestClass]
-    public class SeenInTheWildTests {
+    public class WildTests {
 
         /// <summary>
         /// Testing time spans found in tweets or elsewhere in the wild
@@ -33,7 +33,9 @@ namespace TimeSpanParserUtil.Tests {
         [DataRow("It's been exactly 0 years 0 months 0 days 0 hours 5 minutes 16 seconds 12 milliseconds and 1 nanosecond since we ate", 0, 0, 5, 16, 12)] //note: 1 nanosecond is 100x smaller than TimeSpan's tick resolution so is effectively ignored
         [DataRow("19,999d", 19999, 0, 0, 0, 0)] // "it had been 19,999d since the Satanic Enthronement ceremony"
         [DataRow("9,130.9 days, 219,141 hours, 13,148,477 minutes, 788,908,652 seconds", 36_523, 13, 10, 32, 0)] // ~100 years. (full version in FutureWildTests)
-        public void WildTests(string parseThis, int days, int hours, int minutes, int seconds, int milliseconds) {
+        [DataRow("365 days, 5 hours, 48 minutes, and 46 seconds", 365, 5, 48, 46, 0)] // one year is... (via NASA)
+        [DataRow("365.2422 days", 365, 5, 48, 46, 80)] // one year is... (via NASA): note: 80ms longer than the above
+        public void WildSeenTests(string parseThis, int days, int hours, int minutes, int seconds, int milliseconds) {
             var expected = new TimeSpan(days, hours, minutes, seconds, milliseconds);
             TimeSpan actual = TimeSpanParser.Parse(parseThis);
 
@@ -68,7 +70,7 @@ namespace TimeSpanParserUtil.Tests {
         //[DataRow("half-life of beryllium-13" )] // (larcin) 2.7×10−21 s
         [DataRow("Just 500 trillion nanoseconds!", 0, 0, 0, 500000, 0)] // 5.78703703703703809 days
         //[DataRow("「00:00:00;00」")] // ;00 frames (video editing) z
-        public void FutureWildTests(string parseThis, int days, int hours, int minutes, int seconds, int milliseconds) {
+        public void FutureWildSeenTests(string parseThis, int days, int hours, int minutes, int seconds, int milliseconds) {
             var expected = new TimeSpan(days, hours, minutes, seconds, milliseconds);
             TimeSpan actual = TimeSpanParser.Parse(parseThis);
 

@@ -209,11 +209,13 @@ namespace TimeSpanParserUtil.Tests {
 
 
         [TestMethod]
-        [DataRow("c", "-1.2:3:4.5")] // common format specifier ("c"). Equal to String.Empty or null
-        [DataRow("g", "-1.2:3:4")] // all the same (when no fractions of a second)
+        [DataRow("c", "-1.2:3:4.5")] // "-1.02:03:04.5000000" common format specifier ("c"). Equal to String.Empty or null
         [DataRow("g", "-1.2:3:4.5")] // three formats: -1:2:03:04.5 (en-US), -1:2:03:04,5 (fr-FR), -1:2:03:04/5 (fa-IR)
+        [DataRow("g", "10075199.2:3:4.5")] // three formats still
+        [DataRow("g", "-1.2:3:4")]   // "-1:2:03:04" all identical (when no fractions of a second): 
         [DataRow("G", "-1.2:3:4.5")] // three formats: -1:02:03:04.5000000 (en-US), -1:02:03:04,5000000 (fr-FR), -1:02:03:04/5000000 (fa-IR)
-        [DataRow(@"hh\:mm\:ss", "-10675199.02:48:05.4775808")] // all same
+        [DataRow("G", "-1.2:3:4")]   // three formats: -1:02:03:04.0000000 (en-US), -1:02:03:04,0000000 (fr-FR), -1:02:03:04/0000000 (fa-IR)
+        [DataRow(@"hh\:mm\:ss", "-10675199.02:48:05.4775808")] // "02:48:05" (naturally all the same)
         public void FindAllTimespanCulturesNontest(string format, string timespan) {
 
             // because writing this was easier than finding this information online
