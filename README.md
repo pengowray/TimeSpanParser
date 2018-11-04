@@ -6,7 +6,7 @@
 
 TimeSpanParser accepts a number of formats, such as
 
-`TimeSpanParser.Parse("2h10m58s")` == `TimeSpanParser.Parse("2:10:58")` == `TimeSpanParser.Parse("2 hours, 10 minutes 58 seconds")` == `TimeSpan.Parse("2:10:58")` and more odd things with decimal separators.
+`TimeSpanParser.Parse("2h10m58s")` == `TimeSpanParser.Parse("2:10:58")` == `TimeSpanParser.Parse("2 hours, 10 minutes 58 seconds")` == `TimeSpan.Parse("2:10:58")`
 
 See [QuickGuide.cs](https://github.com/quole/TimeSpanParser/blob/master/TimeParser.Tests/QuickGuide.cs) for more examples and options. This is like a tutorial in UnitTest format, to be sure the examples are typo free.
 
