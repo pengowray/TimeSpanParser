@@ -51,67 +51,71 @@ namespace TimeSpanParserUtil {
         protected static Dictionary<string, Units> GetUnitsDict() {
 
             if (_Units == null) {
-                _Units = new Dictionary<string, Units>();
+                _Units = new Dictionary<string, Units>
+                {
+                    ["ns"] = Units.Nanoseconds,
+                    ["nanosec"] = Units.Nanoseconds,
+                    ["nanosecs"] = Units.Nanoseconds,
+                    ["nanosecond"] = Units.Nanoseconds,
+                    ["nanoseconds"] = Units.Nanoseconds,
 
-                _Units["ns"] = Units.Nanoseconds;
-                _Units["nanosec"] = Units.Nanoseconds;
-                _Units["nanosecs"] = Units.Nanoseconds;
-                _Units["nanosecond"] = Units.Nanoseconds;
-                _Units["nanoseconds"] = Units.Nanoseconds;
+                    ["μs"] = Units.Microseconds,
+                    ["microsec"] = Units.Microseconds,
+                    ["microsecs"] = Units.Microseconds,
+                    ["microsecond"] = Units.Microseconds,
+                    ["microseconds"] = Units.Microseconds,
 
-                _Units["μs"] = Units.Microseconds;
-                _Units["microsec"] = Units.Microseconds;
-                _Units["microsecs"] = Units.Microseconds;
-                _Units["microsecond"] = Units.Microseconds;
-                _Units["microseconds"] = Units.Microseconds;
+                    ["ms"] = Units.Milliseconds,
+                    ["millisec"] = Units.Milliseconds,
+                    ["millisecs"] = Units.Milliseconds,
+                    ["millisecond"] = Units.Milliseconds,
+                    ["milliseconds"] = Units.Milliseconds,
 
-                _Units["ms"] = Units.Milliseconds;
-                _Units["millisec"] = Units.Milliseconds;
-                _Units["millisecs"] = Units.Milliseconds;
-                _Units["millisecond"] = Units.Milliseconds;
-                _Units["milliseconds"] = Units.Milliseconds;
+                    ["s"] = Units.Seconds,
+                    ["sec"] = Units.Seconds,
+                    ["secs"] = Units.Seconds,
+                    ["second"] = Units.Seconds,
+                    ["seconds"] = Units.Seconds,
 
-                _Units["s"] = Units.Seconds;
-                _Units["sec"] = Units.Seconds;
-                _Units["secs"] = Units.Seconds;
-                _Units["second"] = Units.Seconds;
-                _Units["seconds"] = Units.Seconds;
+                    ["m"] = Units.Minutes,
+                    ["min"] = Units.Minutes,
+                    ["mins"] = Units.Minutes,
+                    ["minute"] = Units.Minutes,
+                    ["minutes"] = Units.Minutes,
 
-                _Units["m"] = Units.Minutes;
-                _Units["min"] = Units.Minutes;
-                _Units["mins"] = Units.Minutes;
-                _Units["minute"] = Units.Minutes;
-                _Units["minutes"] = Units.Minutes;
+                    ["h"] = Units.Hours,
+                    ["hr"] = Units.Hours,
+                    ["hrs"] = Units.Hours,
+                    ["hour"] = Units.Hours,
+                    ["hours"] = Units.Hours,
 
-                _Units["h"] = Units.Hours;
-                _Units["hr"] = Units.Hours;
-                _Units["hrs"] = Units.Hours;
-                _Units["hour"] = Units.Hours;
-                _Units["hours"] = Units.Hours;
+                    ["d"] = Units.Days,
+                    ["day"] = Units.Days,
+                    ["days"] = Units.Days,
 
-                _Units["d"] = Units.Days;
-                _Units["day"] = Units.Days;
-                _Units["days"] = Units.Days;
-                _Units["solar day"] = Units.Days;
-                _Units["solar days"] = Units.Days;
+                    ["w"] = Units.Weeks,
+                    ["wk"] = Units.Weeks,
+                    ["wks"] = Units.Weeks,
+                    ["week"] = Units.Weeks,
+                    ["weeks"] = Units.Weeks,
 
-                _Units["w"] = Units.Weeks;
-                _Units["wk"] = Units.Weeks;
-                _Units["wks"] = Units.Weeks;
-                _Units["week"] = Units.Weeks;
-                _Units["weeks"] = Units.Weeks;
+                    // Only 0 months allowed (to avoid ambiguity)
+                    //TODO: Gather use cases. Setting to handle as 28/30/31/30.43685 days or as error
+                    ["month"] = Units.Months,
+                    ["months"] = Units.Months,
 
-                // Only 0 months allowed (to avoid ambiguity)
-                //TODO: Gather use cases. Setting to handle as 28/30/31/30.43685 days or as error
-                _Units["month"] = Units.Months; // Units.ErrorAmbiguous;
-                _Units["months"] = Units.Months; //  Units.ErrorAmbiguous;
+                    // Only 0 years allowed (to avoid ambiguity, imprecision or relative-date dependence)
+                    //TODO: Gather use cases. Perhaps create a min-max possible range. Or allow to be set by the user e.g. 365 / 366 / 365.25 / 365.24 / 365.2422 / Units.ErrorAmbiguous
+                    ["y"] = Units.Years,
+                    ["yr"] = Units.Years,
+                    ["yrs"] = Units.Years,
+                    ["year"] = Units.Years,
+                    ["years"] = Units.Years
+                };
 
-                // Only 0 years allowed (to avoid ambiguity)
-                //TODO: Gather use cases. Perhaps create a min-max possible range. Or allow to be set by the user e.g. 365 / 366 / 365.25 / 365.24 / 365.2422 / ErrorAmbiguous
-                _Units["y"] = Units.Years; // Units.ErrorAmbiguous;
-                _Units["ys"] = Units.Years; // Units.ErrorAmbiguous;
-                _Units["year"] = Units.Years; // Units.ErrorAmbiguous;
-                _Units["years"] = Units.Years; // Units.ErrorAmbiguous;
+                // calendar year with 365 days
+                //_Units["common year"] = Units.Years; // TODO
+                //_Units["common years"] = Units.Years; // TODO
             }
 
             return _Units;
@@ -262,7 +266,9 @@ namespace TimeSpanParserUtil {
 
             // weird things:
             // - supports mixed formats like "22:11h 10s" (=22:11:10)
-            // - starting colon will be ignored, ":30" =30
+
+            // may change:
+            // - starting colon will be ignored, ":30" treated as "30"
             // - but not after: 3: (treated as "3")
 
             //TODO: 
@@ -427,6 +433,7 @@ namespace TimeSpanParserUtil {
 
 
             //e.g. string pattern = @"\b(for|in|delay|now|wait)\b"; 
+            //TODO: replace spaces with any amount of whitespace (currently @"\ ") e.g. "[\s.']*" (spaces dots or ' ) // perhaps do replacements first to make it easier, e.g. replace "
             StringBuilder pattern = new StringBuilder();
             pattern.Append(@"\b("); // must be in (brackets) to be included in results of regex split
             //pattern.Append(@"?<keyword>"); // name group
@@ -435,7 +442,7 @@ namespace TimeSpanParserUtil {
 
             var regex = new Regex(pattern.ToString(), RegexOptions.IgnoreCase);
             string[] parts = regex.Split(text);
-            //Console.WriteLine("parts: " + string.Join(" | ", parts));
+            //Console.WriteLine("pattern: " + pattern.ToString());
             int nonkeywordCounter = 0;
             string currentPrefix = null;
 

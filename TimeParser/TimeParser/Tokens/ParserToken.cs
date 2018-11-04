@@ -190,14 +190,25 @@ namespace TimeSpanParserUtil {
 
             } else if (unit == Units.Milliseconds) {
                 //return TimeSpan.FromMilliseconds((double)time);
+                //TODO overflow checking
                 long ticks = (long)(time * 10_000);
                 return TimeSpan.FromTicks(ticks);
 
             } else if (unit == Units.Microseconds) {
+                var absTime = Math.Abs(time.Value);
+                if (absTime > 0 && absTime < new decimal(0.1)) {
+                    throw new OverflowException("A component of the timespan was out of range (too small).");
+                }
+
                 long ticks = (long)(time * 10);
                 return TimeSpan.FromTicks(ticks);
 
             } else if (unit == Units.Nanoseconds) {
+                var absTime = Math.Abs(time.Value);
+                if (absTime > 0 && absTime < 100) {
+                    throw new OverflowException("A component of the timespan was out of range (too small).");
+                }
+
                 long ticks = (long)(time / 100);
                 return TimeSpan.FromTicks(ticks);
 

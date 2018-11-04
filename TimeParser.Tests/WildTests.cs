@@ -13,7 +13,7 @@ namespace TimeSpanParserUtil.Tests {
     public class WildTests {
 
         /// <summary>
-        /// Testing time spans found in tweets or elsewhere in the wild
+        /// Testing time spans found in tweets or elsewhere in the wild, especially oddly formatted ones or unusual lengths.
         /// </summary>
         [TestMethod]
         [DataRow("2h:10m:58s", 0, 2, 10, 58, 0)] // "I just finished walking 11.04 km in 2h:10m:58s with #Endomondo #endorphins"
@@ -30,11 +30,10 @@ namespace TimeSpanParserUtil.Tests {
         [DataRow("actually you're wrong its only 0 years, 0 months, 0 days, 1 hours, 17 minutes, and 51 seconds", 0, 1, 17, 51, 0)]
         [DataRow("Only: 0 years 0 months 17 days 1 hours 51 minutes 47 seconds", 17, 1, 51, 47, 0)]
         [DataRow("0 years, 0 months, #10 days, 19 hours", 10, 19, 0, 0, 0)]
-        [DataRow("It's been exactly 0 years 0 months 0 days 0 hours 5 minutes 16 seconds 12 milliseconds and 1 nanosecond since we ate", 0, 0, 5, 16, 12)] //note: 1 nanosecond is 100x smaller than TimeSpan's tick resolution so is effectively ignored
         [DataRow("19,999d", 19999, 0, 0, 0, 0)] // "it had been 19,999d since the Satanic Enthronement ceremony"
         [DataRow("9,130.9 days, 219,141 hours, 13,148,477 minutes, 788,908,652 seconds", 36_523, 13, 10, 32, 0)] // ~100 years. (full version in FutureWildTests)
         [DataRow("365 days, 5 hours, 48 minutes, and 46 seconds", 365, 5, 48, 46, 0)] // one year is... (via NASA)
-        [DataRow("365.2422 days", 365, 5, 48, 46, 80)] // one year is... (via NASA): note: 80ms longer than the above
+        [DataRow("365.2422 days", 365, 5, 48, 46, 80)] // one year is... (via NASA): note: 80ms longer than the above. https://en.wikipedia.org/wiki/Tropical_year gives a bunch of other figures
         public void WildSeenTests(string parseThis, int days, int hours, int minutes, int seconds, int milliseconds) {
             var expected = new TimeSpan(days, hours, minutes, seconds, milliseconds);
             TimeSpan actual = TimeSpanParser.Parse(parseThis);
@@ -69,7 +68,8 @@ namespace TimeSpanParserUtil.Tests {
         //[DataRow("On this day, 25.0 years, 300.0 months, 1,304.4 weeks, 9,130.9 days, 219,141 hours, 13,148,477 minutes, 788,908,652 seconds, myself and 63 other individuals began training at the #1 Fire Academy in this Universe", 0, 0, 0, 0, 0)]
         //[DataRow("half-life of beryllium-13" )] // (larcin) 2.7×10−21 s
         [DataRow("Just 500 trillion nanoseconds!", 0, 0, 0, 500000, 0)] // 5.78703703703703809 days
-        //[DataRow("「00:00:00;00」")] // ;00 frames (video editing) z
+        //[DataRow("「00:00:00;00」")] // ;00 frames (video editing)
+        [DataRow("It's been exactly 0 years 0 months 0 days 0 hours 5 minutes 16 seconds 12 milliseconds and 1 nanosecond since we ate", 0, 0, 5, 16, 12)] //note: 1 nanosecond is 100x smaller than TimeSpan's tick resolution so should cause OverflowException I guess?
         public void FutureWildSeenTests(string parseThis, int days, int hours, int minutes, int seconds, int milliseconds) {
             var expected = new TimeSpan(days, hours, minutes, seconds, milliseconds);
             TimeSpan actual = TimeSpanParser.Parse(parseThis);

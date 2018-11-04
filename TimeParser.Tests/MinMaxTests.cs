@@ -89,14 +89,13 @@ namespace TimeSpanParserUtil.Tests {
             Assert.AreEqual(expected, actual);
         }
 
-
-
         [TestMethod]
         [DataRow("-")]
         [DataRow("")]
         [DataRow(".")]
         [DataRow("/")]
         [DataRow(". . . . .")]
+        [DataRow(".:.:.:.")]
         [DataRow(null)]
         public void NothingTest(string parseThis) {
 
@@ -113,7 +112,7 @@ namespace TimeSpanParserUtil.Tests {
             Assert.IsTrue(success);
             Assert.AreEqual(TimeSpan.MinValue, actual);
         }
-        
+
         [TestMethod]
         public void MaxTest() {
             string MaximumTimeSpan = "10675199:02:48:05.4775807";
@@ -141,8 +140,58 @@ namespace TimeSpanParserUtil.Tests {
             Assert.AreEqual(expected, actual);
         }
 
+        // "The smallest unit of time is the tick, which is equal to 100 nanoseconds or one ten-millionth of a second. There are 10,000 ticks in a millisecond."
+        // -- https://msdn.microsoft.com/en-us/library/system.timespan.ticks(v=vs.110).aspx
+        // TODO: follow Overflow pattern of TimeSpan.Parse exactly.
+        [TestMethod]
+        [DataRow("       100 ns", "0:00:00.0000001", 1, true)]    // ok
+        [DataRow("        10 ns", "0:00:00.00000001", 0, false)]  // ought to overflow but instead is rounded up to 1 tick
+        [DataRow("         1 ns", "0:00:00.000000001", 0, false)] // overflow
+
+        [DataRow("        .1 μs", "0:00:00.0000001", 1, true)]    // ok
+        [DataRow("       .01 μs", "0:00:00.00000001", 0, false)]  // ought to overflow
+        [DataRow("      .001 μs", "0:00:00.000000001", 0, false)] // does overflow
+
+        [DataRow("     .0001 ms", "0:00:00.0000001", 1, true)]    // ok
+        [DataRow("    .00001 ms", "0:00:00.00000001", 0, false)]  // ought to overflow
+        [DataRow("   .000001 ms", "0:00:00.000000001", 0, false)] // overflow
+
+        [DataRow("  .0000001 s ", "0:00:00.0000001", 1, true)]    // ok
+        [DataRow(" .00000001 s ", "0:00:00.00000001", 0, false)]  // ought to overflow 
+        [DataRow(".000000001 s ", "0:00:00.000000001", 0, false)] // overflow
+        public void OverflowExceptionTest(string tsp, string traditional, int ticks, bool successExpected) {
+            if (successExpected) {
+                var expected = TimeSpan.Parse(traditional);
+                var actual = TimeSpanParser.Parse(tsp);
+
+                Console.WriteLine($"actual:");
+                Console.WriteLine(tsp);
+                Console.WriteLine($"parsed: {actual:G}");
+                Console.WriteLine($" ticks: {actual.Ticks}");
+
+                Console.WriteLine($"expected:");
+                Console.WriteLine(traditional);
+                Console.WriteLine($"parsed: {expected:G}");
+                Console.WriteLine($" ticks: {expected.Ticks}");
+
+                Assert.AreEqual(expected, actual);
+                Assert.AreEqual(ticks, expected.Ticks);
+
+            } else {
+                try {
+                    var parsed = TimeSpan.Parse(traditional);
+                    Console.WriteLine(tsp);
+                    Console.WriteLine($"expected:");
+                    Console.WriteLine(traditional);
+                    Console.WriteLine($"parsed: {parsed:G}");
+                    Console.WriteLine($" ticks: {parsed.Ticks}");
+                } catch (OverflowException e) { }
+
+                Assert.ThrowsException<OverflowException>(() => TimeSpan.Parse(traditional));
+                Assert.ThrowsException<OverflowException>(() => TimeSpanParser.Parse(tsp));
+            }
 
 
-
+        }
     }
 }

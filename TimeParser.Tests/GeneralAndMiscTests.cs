@@ -49,55 +49,6 @@ namespace TimeSpanParserUtil.Tests {
             Assert.AreEqual(expected, TimeSpanParser.Parse(parseThis));
         }
 
-        [TestMethod]
-        [DataRow("1.1:08:18:10")]
-        [DataRow("32:18:10:00:00.01")]
-        [DataRow("32.18:10:00:00.01")]
-        //[DataRow("32:18:10:00:00:00")] // ok
-        //[DataRow("32:18:00:1")]
-        public void TooManyColonsTests(string parseThis) {
-            Console.WriteLine(parseThis);
-            Console.WriteLine("number of colons: " + parseThis.Count(ch => ch == ':'));
-            Assert.ThrowsException<FormatException>(() => TimeSpan.Parse(parseThis));
-        }
-
-        [TestMethod]
-        [DataRow("32:18:10:00:00.01")]
-        [DataRow("32:00.01 seconds")]
-        [DataRow("10:32:01 minutes")]
-        [DataRow("20:10:32:01 hours")]
-        [DataRow("10:20:10:32:01 days")]
-        //[DataRow("32:18:10:00:00:00")] // ok
-        //[DataRow("32:18:00:1")]
-        public void TooManyColonsTests2(string parseThis) {
-            var options = new TimeSpanParserOptions();
-            options.AllowDotSeparatedDayHours = false;
-            options.AutoUnitsIfTooManyColons = false;
-
-            Console.WriteLine(parseThis);
-            Console.WriteLine("number of colons: " + parseThis.Count(ch => ch == ':'));
-            Assert.ThrowsException<FormatException>(() => TimeSpanParser.Parse(parseThis));
-        }
-
-        [TestMethod]
-        [DataRow("1.1:08:18:10")] // ok b/c dot separator not allowed
-        [DataRow("1.1:08:18")]
-        [DataRow("32:18:00:00.01")]
-        [DataRow("32.01 seconds")]
-        [DataRow("10:01 minutes")]
-        [DataRow("20:10:32 hours")]
-        [DataRow("10:20:10:32 days")]
-        public void TooManyColonsTests3(string parseThis) {
-            var options = new TimeSpanParserOptions();
-            options.AllowDotSeparatedDayHours = false;
-            options.AutoUnitsIfTooManyColons = false;
-
-            Console.WriteLine(parseThis);
-            Console.WriteLine("number of colons: " + parseThis.Count(ch => ch == ':'));
-            var actual = TimeSpanParser.Parse(parseThis); // should all pass
-        }
-
-
 
         [TestMethod]
         [DataRow("8.64e+6 seconds", "100:0:0:0")]

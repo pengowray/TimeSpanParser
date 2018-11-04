@@ -19,10 +19,13 @@ namespace TimeSpanParserUtil
         public bool FailIfMoreTimeSpansFoundThanRequested = false;
 
         // e.g. if true and ColonedDefault = Units.Minutes, parse "05:10:30" as "05h10m30s" rather than failing
+        //TODO: change into "Segments must match units" or something
         public bool AutoUnitsIfTooManyColons = true;
 
-        // "1.12:13" for "1d 12h 13m" (regardless of ColonedDefault). 
+        // "1.12:13" becomes "1d 12h 13m" (regardless of ColonedDefault). Only works for coloned numbers.
         // But won't if already has four parts, e.g. 1.2:20:40:50 (move this to testing docs)
+        // if AutoUnitsIfTooManyColons == false, then must specify "days" as unit (text or ColonedDefault) 
+        // (or what about None?)
         public bool AllowDotSeparatedDayHours = true;
 
         //TODO: implement
@@ -42,9 +45,10 @@ namespace TimeSpanParserUtil
         // If StrictBigToSmall is true then it basically overrides this as if it were true anyway.
         // public bool DisallowRepeatedUnit = true;
 
-        // If true, treat seconds with decimal point as milliseconds for sake of StrictBigToSmall
+        // If true and StrictBigToSmall, disallow a timespan with both milliseconds and seconds with decimal point.
         // if true and StrictBigToSmall, disallow "10.5 seconds 200 milliseconds", otherwise treat it like "10.7 seconds"
-        public bool DecimalSecondsCountsAsMilliseconds = true;
+        // TODO: something for all units with decimals, e.g. to force "10.5min 40s" to fail
+        public bool DecimalSecondsCountsAsMilliseconds = false;
 
         // Apart AllowUnitlessZero, covered below, 
         // should unitless numbers with no default unit cause parsing to fail?
@@ -57,6 +61,9 @@ namespace TimeSpanParserUtil
         // if !StrictBigToSmall, then multiple zeros can be parsed (and ignored) in the same timespan. 
         // Otherwise it will parse a unitless "0" only for the first unit, and not allow further units
         public bool AllowUnitlessZero = true;
+
+        // if true, units which are too small will cause an OverflowException. E.g. 1 nanosecond (which is 100x smaller than the smallest unit, a tick).
+        public bool ErrorOnTooSmallOutOfRange = true;
 
         //TODO: options as binary flags?
 
