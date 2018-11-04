@@ -2,15 +2,15 @@
 
 `TimeSpanParser.Parse("5 mins")`
 
-By comparison, to get the same result with C#'s built-in parser: `TimeSpan.Parse("00:05:00")`
+`TimeSpan.Parse("00:05:00")` returns the same result with C#'s built-in parser.
 
 TimeSpanParser accepts a number of formats, such as
 
-`TimeSpanParser.Parse("2h10m58s")` == `TimeSpanParser.Parse("2:10:58")` == `TimeSpanParser.Parse("2 hours, 10 minutes 58 seconds")` == `TimeSpan.Parse("2:10:58")`
+`TimeSpanParser.Parse("2h10m58s")` == `TimeSpanParser.Parse("2:10:58")` == `TimeSpanParser.Parse("2 hours, 10 minutes 58 seconds")` == `TimeSpan.Parse("2:10:58")` and more odd things with decimal separators.
 
 See [QuickGuide.cs](https://github.com/quole/TimeSpanParser/blob/master/TimeParser.Tests/QuickGuide.cs) for more examples and options. This is like a tutorial in UnitTest format, to be sure the examples are typo free.
 
-See [WildTests.cs](https://github.com/quole/TimeSpanParser/blob/master/TimeParser.Tests/WildTests.cs) for examples of timespans found in the wild.
+See [WildTests.cs](https://github.com/quole/TimeSpanParser/blob/master/TimeParser.Tests/WildTests.cs) for examples of timespans found in the wild for more odd examples.
 
 Features:
 * Does flexible user input for timespan (duration) parsing.
