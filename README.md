@@ -20,7 +20,7 @@ See [WildTests.cs](https://github.com/quole/TimeSpanParser/blob/master/TimeParse
 * Can round-trip English expressions from [TimeSpan.Humanizer()](https://github.com/Humanizr/Humanizer)
 * Sane, permissive defaults for unambiguous input, but many options to fine tune if you really want.
 * By changing the default options, you can change the expected units, e.g. you can have it treat a bare input of "5" as "5 minutes" instead of throwing an exception; or treat "3:22" as 3m22s instead of the default which would be the equivalent of 3h22m.
-* Will parse "0 years" and "0 months" unambiguous, as such inputs won't change in meaning even on a leap day during a leap year.
+* Will parse "0 years" and "0 months" unambiguously, as such inputs won't change in meaning even on a leap day during a leap year.
 * Many, many unit tests—many of which pass!
 * Returns a [`TimeSpan`](https://docs.microsoft.com/en-us/dotnet/api/system.timespan?view=netcore-2.1) (struct), so shares its limitations — min/max value: [approx ±10 million days](https://docs.microsoft.com/en-us/dotnet/api/system.timespan.maxvalue?view=netcore-2.1). Smallest unit: 100 nanoseconds (aka "[1 microsoft tick](https://docs.microsoft.com/en-us/dotnet/api/system.timespan.ticks?view=netcore-2.1)". There are 10 million [ticks per second](https://docs.microsoft.com/en-us/dotnet/api/system.timespan.tickspersecond?view=netcore-2.1)).
 
