@@ -14,15 +14,15 @@ See [WildTests.cs](https://github.com/quole/TimeSpanParser/blob/master/TimeParse
 
 Features:
 * Does flexible user input for timespan (duration) parsing.
-* Accepts expressions like "1h30m" or "1:30:00" or "1 hour 30 minutes", and even strings like "３．１７：２５：３０．５", and much more
+* Accepts expressions like "1h30m" or "1:30:00" or "1 hour 30 minutes"
 * Also accepts whatever .NET's TimeSpan.Parse() will accept (US and common formats only for now)
-* Accepts a variety of unusual other inputs like "-1.5hrs" and "3e1000 seconds"
+* Accepts a variety of unusual inputs like "-1.5hrs", "3e1000 seconds", and even strings like "３．１７：２５：３０．５" [in case you missed it, the strangest thing about that last example is it uses a dot rather than a colon to separate the days from the hours, which is oddly Microsoft's default way of [outputting TimeSpans ("c")](https://docs.microsoft.com/en-us/dotnet/standard/base-types/standard-timespan-format-strings).]
 * Can round-trip English expressions from [TimeSpan.Humanizer()](https://github.com/Humanizr/Humanizer)
 * Sane, permissive defaults for unambiguous input, but many options to fine tune if you really want.
-* By changing the default options, you can change the expected units, e.g. you can have it treat a bare input of "5" as "5 minutes" instead of throwing an exception; or treat "3:22" as 3m22s instead of the default which would give 3h22m.
-* Accepts "0 years", "0 months" and similar input, as they are unambiguous.
+* By changing the default options, you can change the expected units, e.g. you can have it treat a bare input of "5" as "5 minutes" instead of throwing an exception; or treat "3:22" as 3m22s instead of the default which would be the equivalent of 3h22m.
+* Will parse "0 years" and "0 months" unambiguous, as such inputs won't change in meaning even on a leap day during a leap year.
 * Many, many unit tests—many of which pass!
-* The parser returns a [`TimeSpan`](https://docs.microsoft.com/en-us/dotnet/api/system.timespan?view=netcore-2.1) (struct), so shares its limitations — min/max value: [approx ±29,000 days](https://docs.microsoft.com/en-us/dotnet/api/system.timespan.maxvalue?view=netcore-2.1). Smallest unit: 100 nanoseconds (aka "[1 microsoft tick](https://docs.microsoft.com/en-us/dotnet/api/system.timespan.ticks?view=netcore-2.1)". There are 10 million ticks per second).
+* Only returns a [`TimeSpan`](https://docs.microsoft.com/en-us/dotnet/api/system.timespan?view=netcore-2.1) (struct), so shares its limitations — min/max value: [approx ±29,000 days](https://docs.microsoft.com/en-us/dotnet/api/system.timespan.maxvalue?view=netcore-2.1). Smallest unit: 100 nanoseconds (aka "[1 microsoft tick](https://docs.microsoft.com/en-us/dotnet/api/system.timespan.ticks?view=netcore-2.1)". There are 10 million ticks per second).
 
 "Not Yet Implemented" (NYI) and "Out of Scope" (OoS) features:
 * OoS: relative time support — e.g. "until next thursday" is not supported and currently no plans to add support.
