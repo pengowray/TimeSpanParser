@@ -144,8 +144,12 @@ namespace TimeSpanParserUtil.Tests {
         // -- https://msdn.microsoft.com/en-us/library/system.timespan.ticks(v=vs.110).aspx
         // TODO: follow Overflow pattern of TimeSpan.Parse exactly.
         [TestMethod]
+        [DataRow("    100000 ps", "0:00:00.0000001", 1, true)]    // should be ok
+        [DataRow("     10000 ps", "0:00:00.00000001", 0, false)]  // ought to overflow but instead TimeSpan.Parse() rounds it up to 1 tick
+        [DataRow("      1000 ps", "0:00:00.000000001", 0, false)] // overflow
+
         [DataRow("       100 ns", "0:00:00.0000001", 1, true)]    // ok
-        [DataRow("        10 ns", "0:00:00.00000001", 0, false)]  // ought to overflow but instead is rounded up to 1 tick
+        [DataRow("        10 ns", "0:00:00.00000001", 0, false)]  // ought to overflow
         [DataRow("         1 ns", "0:00:00.000000001", 0, false)] // overflow
 
         [DataRow("        .1 μs", "0:00:00.0000001", 1, true)]    // ok

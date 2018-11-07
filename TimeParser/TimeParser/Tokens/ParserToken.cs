@@ -212,15 +212,23 @@ namespace TimeSpanParserUtil {
                 long ticks = (long)(time / 100);
                 return TimeSpan.FromTicks(ticks);
 
+            } else if (unit == Units.Picoseconds) {
+                var absTime = Math.Abs(time.Value);
+                if (absTime > 0 && absTime < 100_000) {
+                    throw new OverflowException("A component of the timespan was out of range (too small).");
+                }
+
+                long ticks = (long)(time / 100_000);
+                return TimeSpan.FromTicks(ticks);
+
             } else if (unit == Units.ZeroOnly) {
                 // do nothing
                 return TimeSpan.Zero;
 
             }
 
-                return TimeSpan.Zero; // TODO: error?
-            }
-
+            return TimeSpan.Zero; // TODO: error?
+        }
 
     }
 }

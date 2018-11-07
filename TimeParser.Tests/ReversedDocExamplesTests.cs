@@ -92,6 +92,7 @@ namespace TimeSpanParserUtil.Tests {
         [DataRow("20.20:20:20.2000000", 18_012_202_000_000)]
         // examples containing comma separators:
         [DataRow("219,338,580,000,000,000 nanoseconds", 2_193_385_800_000_000)]
+        [DataRow("219,338,580,000,000,000 picoseconds", 2_193_385_800_000)]
         [DataRow("3,655,643.00 minutes", 2_193_385_800_000_000)]
         [DataRow("219,338,580.00 seconds", 2_193_385_800_000_000)]
         [DataRow("2,538 days, 15 hours, 23 minutes, 0 seconds", 2_193_385_800_000_000)]

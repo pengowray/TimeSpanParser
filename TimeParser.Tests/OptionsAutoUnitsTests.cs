@@ -93,7 +93,9 @@ namespace TimeSpanParserUtil.Tests {
                 //TODO: expected value too
             } else {
 
-                Assert.ThrowsException<Exception>(() => TimeSpanParser.Parse(parseThis));
+                Assert.ThrowsException<ArgumentException>(() => TimeSpanParser.Parse(parseThis));
+                //Assert.ThrowsException<FormatException>(() => TimeSpanParser.Parse(parseThis));
+                
             }
         }
 

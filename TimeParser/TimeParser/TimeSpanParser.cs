@@ -13,29 +13,33 @@ namespace TimeSpanParserUtil {
     //Note: only 0 months and 0 years are allowed
     //Do not change to binary flags
     //TODO: separate ordering error value from other errors (e.g. null)
-    public enum Units { None, Error, ErrorAmbiguous, Years, Months, Weeks, Days, Hours, Minutes, Seconds, Milliseconds, Microseconds, Nanoseconds, ErrorTooManyUnits, ZeroOnly }
+    public enum Units { None, Error, ErrorAmbiguous, Years, Months, Weeks, Days, Hours, Minutes, Seconds, Milliseconds, Microseconds, Nanoseconds, Picoseconds, ErrorTooManyUnits, ZeroOnly }
 
     static class UnitsExtensions {
         public static bool IsTimeUnit(this Units unit) {
-            return (unit >= Units.Years && unit <= Units.Nanoseconds);
+            return (unit >= Units.Years && unit <= Units.Picoseconds);
         }
     }
 
     public class TimeSpanParser {
         public static TimeSpan Parse(string text) {
+            // possible exceptions:
+            // FormatException
+            // OverflowException
+            // ArgumentException
+
             if (TryParse(text, timeSpan: out TimeSpan timeSpan)) {
                 return timeSpan;
             }
 
-            throw new ArgumentException("Failed to parse."); // TODO?
+            throw new ArgumentException("Failed to parse.");
         }
 
         public static TimeSpan Parse(string text, TimeSpanParserOptions options) {
             if (TryParse(text, options, out TimeSpan timeSpan)) {
                 return timeSpan;
             }
-
-            throw new ArgumentException("Failed to parse."); // TODO?
+            throw new ArgumentException("Failed to parse.");
         }
 
         public static TimeSpan Parse(string text, Units uncolonedDefault, Units colonedDefault) {
@@ -53,6 +57,12 @@ namespace TimeSpanParserUtil {
             if (_Units == null) {
                 _Units = new Dictionary<string, Units>
                 {
+                    ["ps"] = Units.Picoseconds,
+                    ["picosec"] = Units.Picoseconds,
+                    ["picosecs"] = Units.Picoseconds,
+                    ["picosecond"] = Units.Picoseconds,
+                    ["picoseconds"] = Units.Picoseconds,
+
                     ["ns"] = Units.Nanoseconds,
                     ["nanosec"] = Units.Nanoseconds,
                     ["nanosecs"] = Units.Nanoseconds,
@@ -98,6 +108,8 @@ namespace TimeSpanParserUtil {
                     ["wks"] = Units.Weeks,
                     ["week"] = Units.Weeks,
                     ["weeks"] = Units.Weeks,
+
+                    //TODO: fortnight
 
                     // Only 0 months allowed (to avoid ambiguity)
                     //TODO: Gather use cases. Setting to handle as 28/30/31/30.43685 days or as error

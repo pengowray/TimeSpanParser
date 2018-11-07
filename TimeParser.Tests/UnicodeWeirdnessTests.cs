@@ -37,6 +37,23 @@ namespace TimeSpanParserUtil.Tests {
         }
 
         [TestMethod]
+        [DataRow("5 ms", 0, 0, 0, 0, 5)] // ascii
+        [DataRow("5 ㎳", 0, 0, 0, 0, 5)] // ㎳ square
+        [DataRow("5000 μs", 0, 0, 0, 0, 5)] // U+00B5 'Micro Sign'
+        [DataRow("5000μs", 0, 0, 0, 0, 5)] // U+00B5 'Micro Sign'
+        [DataRow("5000 ㎲", 0, 0, 0, 0, 5)] // U+33B2 'Square Mu S Unicode'
+        [DataRow("5000000 ns", 0, 0, 0, 0, 5)] // ascii
+        [DataRow("5000000 ㎱", 0, 0, 0, 0, 5)] // ㎱ square
+        [DataRow("5000000000 ps", 0, 0, 0, 0, 5)] // ascii
+        [DataRow("5000000000 ㎰", 0, 0, 0, 0, 5)] // ㎰ square U+33b0
+        public void UnicodeUnits(string parseThis, int days, int hours, int minutes, int seconds, int milliseconds) {
+            var expected = new TimeSpan(days, hours, minutes, seconds, milliseconds);
+            TimeSpan actual = TimeSpanParser.Parse(parseThis);
+
+            Assert.AreEqual(expected, actual);
+        }
+
+        [TestMethod]
         [DataRow("3_days_18_seconds", 3, 0, 0, 18, 0)] // underscore is treated as a character for regex word boundries (\b) and words (\w)
         public void UnderscoreTest(string parseThis, int days, int hours, int minutes, int seconds, int milliseconds) {
             var expected = new TimeSpan(days, hours, minutes, seconds, milliseconds);

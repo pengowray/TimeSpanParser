@@ -33,6 +33,7 @@ namespace TimeSpanParserUtil.Tests {
         [DataRow(Units.Microseconds, "-642123", "-0:00:00.642123")]
         [DataRow(Units.Nanoseconds, "100", "0:00:00.0000001")] // 100ns == 1 tick (finest resolution). See MinMaxTests.OverflowExceptionTest() for more.
         [DataRow(Units.Nanoseconds, "-53100", "-0:00:00.00000531")]
+        [DataRow(Units.Picoseconds, "-53100000", "-0:00:00.00000531")]
         // test it doesn't effect coloned numbers
         [DataRow(Units.Minutes, "10:50", "10:50:00")] 
         [DataRow(Units.Seconds, "10:50", "10:50:00")]
