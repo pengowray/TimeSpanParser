@@ -25,9 +25,8 @@ See [WildTests.cs](https://github.com/quole/TimeSpanParser/blob/master/TimeParse
 * Returns a [`TimeSpan`](https://docs.microsoft.com/en-us/dotnet/api/system.timespan?view=netcore-2.1) (struct), so shares its limitations — min/max value: [approx ±10 million days](https://docs.microsoft.com/en-us/dotnet/api/system.timespan.maxvalue?view=netcore-2.1). Smallest unit: 100 nanoseconds (aka "[1 microsoft tick](https://docs.microsoft.com/en-us/dotnet/api/system.timespan.ticks?view=netcore-2.1)". There are 10 million [ticks per second](https://docs.microsoft.com/en-us/dotnet/api/system.timespan.tickspersecond?view=netcore-2.1)).
 
 **Help needed**
-PRs welcome. Especially if you find an input TimeSpanParser.Parse(string) does not deal correctly compared to `TimeSpan.Parse(string)` does, then please create an issue or add a unit test.
-
-[To-do list](https://github.com/quole/TimeSpanParser/wiki/Todo) (Wiki)
+PRs welcome. If you find any input TimeSpanParser.Parse(string) does not parse correctly, especially if it differs from `TimeSpan.Parse(string)`, then please create a new issue or add a unit test.
 
 See also:
 * Quole's post with the [original concept and motivation](https://github.com/Humanizr/Humanizer/issues/691) for TimeSpanParser.
+* [To-do list](https://github.com/quole/TimeSpanParser/wiki/Todo) (Wiki)
