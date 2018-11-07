@@ -8,10 +8,6 @@ TimeSpanParser accepts a number of formats, such as
 
 `TimeSpanParser.Parse("2h10m58s")` == `TimeSpanParser.Parse("2:10:58")` == `TimeSpanParser.Parse("2 hours, 10 minutes 58 seconds")`
 
-See [QuickGuide.cs](https://github.com/quole/TimeSpanParser/blob/master/TimeParser.Tests/QuickGuide.cs) for more examples and options. This is like a tutorial in UnitTest format, to be sure the examples are typo free.
-
-See [WildTests.cs](https://github.com/quole/TimeSpanParser/blob/master/TimeParser.Tests/WildTests.cs) for examples of timespans found in the wild for more odd examples.
-
 **Features**
 * Does flexible user input for timespan (duration) parsing.
 * Accepts expressions like "1h30m" or "1:30:00" or "1 hour 30 minutes"
@@ -29,4 +25,6 @@ PRs welcome. If you find any input TimeSpanParser.Parse(string) does not parse c
 
 See also:
 * Quole's post with the [original concept and motivation](https://github.com/Humanizr/Humanizer/issues/691) for TimeSpanParser.
+* [QuickGuide.cs](https://github.com/quole/TimeSpanParser/blob/master/TimeParser.Tests/QuickGuide.cs) — Read through the comments for a tour of the more advanced usage and options. This UnitTest is written as a tutorial.
+* [WildTests.cs](https://github.com/quole/TimeSpanParser/blob/master/TimeParser.Tests/WildTests.cs) — Examples of timespans found in the wild.
 * [To-do list](https://github.com/quole/TimeSpanParser/wiki/Todo) (Wiki)
