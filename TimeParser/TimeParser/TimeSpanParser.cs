@@ -284,19 +284,6 @@ namespace TimeSpanParserUtil {
             // - but not after: 3: (treated as "3")
             // - in future, starting-colon numbers may get their own option
 
-            //TODO: 
-            // - support for https://en.wikipedia.org/wiki/ISO_8601#Durations
-            // - better exception messages
-            // - word numbers ("one second", "a day")
-            // - Move this list to the Wiki 
-
-            //TODO some day:
-            // - accept "minutes:30, seconds:10" or "minutes=30"
-            // - accept "5:10 [mm:ss]" format (number with its format)
-            // - accept weird SI units like microsecond, megaseconds, gigaseconds, decaseconds, etc
-            // - give error on slash, e.g. 20/sec
-            // - explicitly accept weird plurals, e.g. 20 sec/s or second(s) -- already fine already because creates word boundry
-            // - fractional units: 1/2 hour
 
             var numberRegex = new Regex(numberRegexStr); // TODO: re-use regex + RegexOptions.Compiled
             var zeroRegex = new Regex(zeroRegexStr);
