@@ -13,14 +13,21 @@ namespace TimeSpanParserUtil.Tests {
     public class MinMaxTests {
 
         [TestMethod]
+        [DataRow("00:00")]
+        [DataRow("00:00.")]
         [DataRow("00:00:00")] // default value
+        [DataRow("00:00:00.")]
+        [DataRow("00:00:00.0")]
         [DataRow("0:00:00:00")]
+        [DataRow("0.00:00:00.00")]
+        [DataRow("0:00:00:00.")]
         [DataRow("0:00:00:00.00000")]
         [DataRow("0:0:0")]
         [DataRow("0")]
         [DataRow("-0")]
         [DataRow("-0:0:0")]
         [DataRow("-00:00:00")]
+        [DataRow("-00:00:00.")]
         [DataRow("-0:00:00:00")]
         public void ZeroTest(string parseThis) {
             var expected = TimeSpan.Zero;
@@ -37,6 +44,8 @@ namespace TimeSpanParserUtil.Tests {
         [DataRow("0 0 0 0 0")] // everything after first 0 should be ignored
         [DataRow("0000.00000000:00.0:0.00:00.00")]
         [DataRow("0:0:0:0:0:0:0:0:0:0.0")]
+        [DataRow("0 weeks 0 days 0 hours 0 minutes 0 seconds")]
+        [DataRow("0 picoseconds")]
         public void ZeroOnlyWeirdnessTest(string parseThis) {
             Console.WriteLine(parseThis);
 
@@ -51,6 +60,8 @@ namespace TimeSpanParserUtil.Tests {
         [DataRow("0000.00000000:00.0:0.00:00:00:00:00.1")]
         [DataRow("0:0:0:0:0:0:2")]
         [DataRow("0.0:0:0:0:0:0:2")]
+        [DataRow(".0:0:0:0:0:0:2")]
+        [DataRow("0:0:0:0:0:0:2.")]
         public void ZeroOnlyFailTest(string parseThis) {
             Console.WriteLine(parseThis);
 
@@ -74,6 +85,7 @@ namespace TimeSpanParserUtil.Tests {
 
         [TestMethod]
         [DataRow("0 years")]
+        [DataRow("0 years 0 days")]
         [DataRow("0:00 months")]
         [DataRow("0:0:0:0:0:0 y")]
         [DataRow("0 years 0 months 0 days")]
@@ -91,10 +103,14 @@ namespace TimeSpanParserUtil.Tests {
 
         [TestMethod]
         [DataRow("-")]
+        [DataRow("-:")]
         [DataRow("")]
         [DataRow(".")]
         [DataRow("/")]
         [DataRow(". . . . .")]
+        [DataRow(":.")]
+        [DataRow(".:")]
+        [DataRow(".:.")]
         [DataRow(".:.:.:.")]
         [DataRow(null)]
         public void NothingTest(string parseThis) {
@@ -140,16 +156,111 @@ namespace TimeSpanParserUtil.Tests {
             Assert.AreEqual(expected, actual);
         }
 
+        protected IEnumerable<string> DigitStringsDepthFirst(char[] tryDigits, int maxLen = 4, string text = "") {
+            if (maxLen < 0)
+                yield break;
+
+            yield return text;
+
+            foreach (var digit in tryDigits) {
+                //yield return text + digit.ToString(); // the "" option
+                foreach (var d2 in DigitStringsDepthFirst(tryDigits, maxLen - 1, text + digit)) {
+                    yield return d2;
+                }
+            }
+        }
+
+        protected IEnumerable<string> DigitStrings(char[] tryDigits, int maxLen = 4, string text = "") {
+            return Enumerable.Range(0, (int)Math.Pow(tryDigits.Length, maxLen)).Select(n => text + IntToString(n, tryDigits)).Where(s => !s.Contains(' '));
+        }
+
+        public static string IntToString(int value, char[] baseChars) {
+            string result = string.Empty;
+            int targetBase = baseChars.Length;
+
+            do {
+                result = baseChars[value % targetBase] + result;
+                value = value / targetBase;
+            }
+            while (value > 0);
+
+            return result;
+        }
+
+        [TestMethod]
+        public void OverflowExceptionValuesNonTest() {
+            //char[] baseChars = { '5', '0', '1', '8', '9' };
+            char[] baseChars = { ' ', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
+            char[] baseCharsShort = { ' ', '0', '1', '9' };
+
+            string start = "0:00:00.000000";
+            //foreach (var text in DigitStringsDepthFirst(baseChars, 3, start)) {
+            foreach (var text in DigitStrings(baseChars, 2, start)) {
+                var decimals = text.Split('.')[1];
+                var nonZeroDecimals = decimals.TrimEnd('0');
+                var nonredundant = nonZeroDecimals.Length;
+                var redundant = decimals.Length - nonredundant;
+
+                string dp = $"// dp: {decimals.Length} ({redundant} redundant)";
+
+                TimeSpan tspParsed;
+                long tspTicks = 0;
+                bool tspSuccess = false; ;
+
+                try {
+                    tspParsed = TimeSpanParser.Parse(text);
+                    tspTicks = tspParsed.Ticks;
+                    tspSuccess = true;
+
+                } catch (OverflowException e) {
+                    tspSuccess = false;
+                }
+
+                long ticks = 0;
+                bool success = false;
+                try {
+                    var parsed = TimeSpan.Parse(text);
+                    ticks = parsed.Ticks;
+                    success = true;
+                    
+
+                } catch (OverflowException e) {
+                    success = false;
+                }
+
+                bool overflowedByZeroes = !success && nonredundant <= 7 && redundant >= 1;
+                bool earlyOverflow = !overflowedByZeroes && !success && tspTicks > 0; // note: excludes overflowedByZeroes 
+                bool wrongCount = success && (ticks != tspTicks);
+
+                string command = $"TimeSpan.Parse(\"{text}\"); //";
+                string commandTicks = $"TimeSpan.Parse(\"{text}\").Ticks; //";
+                if (overflowedByZeroes) {
+                    Console.WriteLine($"{command} OverflowException due to zeroes. {nonredundant} d.p. + {redundant} zeroes. Ticks:{tspTicks}");
+                } else if (earlyOverflow) {
+                    Console.WriteLine($"{commandTicks} OverflowException, but could have returned {tspTicks}");
+                } else if (wrongCount) {
+                    Console.WriteLine($"{commandTicks} == {ticks} but should give {tspTicks}");
+                }
+
+                //Console.WriteLine($"[DataRow(\"{text}\", {tspTicks}, {tspSuccess}, {ticks}, {success})] {dp} // {(success ? "OK" : "OVERFLOW")}");
+
+                
+            }
+        }
+
         // "The smallest unit of time is the tick, which is equal to 100 nanoseconds or one ten-millionth of a second. There are 10,000 ticks in a millisecond."
         // -- https://msdn.microsoft.com/en-us/library/system.timespan.ticks(v=vs.110).aspx
-        // TODO: follow Overflow pattern of TimeSpan.Parse exactly.
+        // "ff - Optional fractional seconds, consisting of one to seven decimal digits."
+        // -- https://docs.microsoft.com/en-us/dotnet/api/system.timespan.parse?redirectedfrom=MSDN&view=netcore-2.1#System_TimeSpan_Parse_System_String_
+        //TODO: separate out overflow weirdness and TimeSpanParser overflow tests
         [TestMethod]
-        [DataRow("    100000 ps", "0:00:00.0000001", 1, true)]    // should be ok
-        [DataRow("     10000 ps", "0:00:00.00000001", 0, false)]  // ought to overflow but instead TimeSpan.Parse() rounds it up to 1 tick
+        [DataRow("    100000 ps", "0:00:00.0000001", 1, true)]    // ok
+        [DataRow("     10000 ps", "0:00:00.00000001", 0, false)]  // ought to overflow but instead TimeSpan.Parse() returns 1 tick
         [DataRow("      1000 ps", "0:00:00.000000001", 0, false)] // overflow
 
         [DataRow("       100 ns", "0:00:00.0000001", 1, true)]    // ok
         [DataRow("        10 ns", "0:00:00.00000001", 0, false)]  // ought to overflow
+        [DataRow("        90 ns", "0:00:00.00000009", 0, false)]  // TimeSpan.Parse() overflows correctly
         [DataRow("         1 ns", "0:00:00.000000001", 0, false)] // overflow
 
         [DataRow("        .1 μs", "0:00:00.0000001", 1, true)]    // ok
@@ -191,7 +302,9 @@ namespace TimeSpanParserUtil.Tests {
                     Console.WriteLine($" ticks: {parsed.Ticks}");
                 } catch (OverflowException e) { }
 
-                Assert.ThrowsException<OverflowException>(() => TimeSpan.Parse(traditional));
+                // TimeSpan.Parse() does not reliably throw OverflowExceptions, so ignore this Assert
+                //Assert.ThrowsException<OverflowException>(() => TimeSpan.Parse(traditional));
+
                 Assert.ThrowsException<OverflowException>(() => TimeSpanParser.Parse(tsp));
             }
 

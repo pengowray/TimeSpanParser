@@ -53,8 +53,9 @@ namespace TimeSpanParserUtil.Tests {
             Assert.AreEqual(expected, actual);
         }
 
+        //This test exists because the underscore is treated as a character for regex word boundries(\b) and words(\w)
         [TestMethod]
-        [DataRow("3_days_18_seconds", 3, 0, 0, 18, 0)] // underscore is treated as a character for regex word boundries (\b) and words (\w)
+        [DataRow("3_days_18_seconds", 3, 0, 0, 18, 0)]
         public void UnderscoreTest(string parseThis, int days, int hours, int minutes, int seconds, int milliseconds) {
             var expected = new TimeSpan(days, hours, minutes, seconds, milliseconds);
             TimeSpan actual = TimeSpanParser.Parse(parseThis);
