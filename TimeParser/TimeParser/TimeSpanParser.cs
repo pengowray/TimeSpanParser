@@ -7,20 +7,6 @@ using System.Globalization;
 
 namespace TimeSpanParserUtil {
 
-    //Note: Units must be largest to smallest with "None" as the "biggest". 
-    //Note: Units must be in strict order for how they'd be parsed in colon-format, i.e. Weeks:Days:Hours:Minutes:Seconds (stops at Milliseconds)
-    //Note: add other units after ZeroOnly (or Milliseconds)
-    //Note: only 0 months and 0 years are allowed
-    //Do not change to binary flags
-    //TODO: separate ordering error value from other errors (e.g. null)
-    public enum Units { None, Error, ErrorAmbiguous, Years, Months, Weeks, Days, Hours, Minutes, Seconds, Milliseconds, Microseconds, Nanoseconds, Picoseconds, ErrorTooManyUnits, ZeroOnly }
-
-    static class UnitsExtensions {
-        public static bool IsTimeUnit(this Units unit) {
-            return (unit >= Units.Years && unit <= Units.Picoseconds);
-        }
-    }
-
     public partial class TimeSpanParser {
         public static TimeSpan Parse(string text) {
             // possible exceptions:
@@ -249,13 +235,15 @@ namespace TimeSpanParserUtil {
             text = text.Normalize(NormalizationForm.FormKC); // fixing any fullwidth characters
             text = text.Replace('_', ' ');
 
-            var numberFormatInfo = CultureInfo.CurrentCulture.NumberFormat;
-            if (options.FormatProvider != null) numberFormatInfo = NumberFormatInfo.GetInstance(options.FormatProvider);
+            var numberFormatInfo = (options.FormatProvider == null) 
+                ? CultureInfo.CurrentCulture.NumberFormat 
+                : NumberFormatInfo.GetInstance(options.FormatProvider);
+            
             string decimalSeparator = numberFormatInfo.NumberDecimalSeparator;
             bool allowThousands = ((options.NumberStyles & NumberStyles.AllowThousands) > 0);
-            string groupSeparator = allowThousands ? 
-                Regex.Escape(numberFormatInfo.NumberGroupSeparator) : "";
-            string plusMinus = numberFormatInfo.PositiveSign + numberFormatInfo.NegativeSign; // TODO
+            string groupSeparator = allowThousands ?
+                Regex.Escape(numberFormatInfo.NumberGroupSeparator) : string.Empty;
+            string plusMinus = numberFormatInfo.PositiveSign + numberFormatInfo.NegativeSign; // TODO?
 
             if (options.AllowDotSeparatedDayHours && decimalSeparator != ".") decimalSeparator += "."; // always also need a dot for day.hour separation (unless that's off)
 
