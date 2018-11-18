@@ -6,7 +6,7 @@
 
 TimeSpanParser accepts a number of formats, such as
 
-`TimeSpanParser.Parse("2h10m58s")` == `TimeSpanParser.Parse("2:10:58")` == `TimeSpanParser.Parse("2 hours, 10 minutes 58 seconds")`
+`TimeSpanParser.Parse("2h10m58s")` == `TimeSpanParser.Parse("2:10:58")` == `TimeSpanParser.Parse("2 hours, 10 minutes 58 seconds")` == `TimeSpanParser.Parse("2:10 58s")`
 
 **Features**
 * Does flexible user input for timespan (duration) parsing.
