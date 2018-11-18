@@ -39,13 +39,6 @@ namespace TimeSpanParserUtil.Tests {
             Assert.AreEqual(TimeSpan.Parse("0:00:00.0000055").Ticks,  55);  // Passes correctly
             Assert.AreEqual(TimeSpan.Parse("0:00:00.00000550").Ticks, 550); // Passes but shouldn't
 
-            // larger numbers
-            Assert.AreEqual(TimeSpan.Parse("0:00:00.0123450"),
-                            TimeSpan.Parse("0:00:00.00123450"));
-
-            Assert.AreEqual(TimeSpan.Parse("0:00:00.0123456"),
-                            TimeSpan.Parse("0:00:00.00123456"));
-
             // Just reiterating, 5,500 ns == 55,000 ns
             Assert.AreEqual(TimeSpan.Parse("0:00:00.00000055"), 
                             TimeSpan.Parse("0:00:00.0000055"));
@@ -62,7 +55,18 @@ namespace TimeSpanParserUtil.Tests {
 
             // Needlessly overflows (8 fractional zeroes)
             Assert.ThrowsException<OverflowException>(() => 
-                            TimeSpan.Parse("0:00:00.00000000")); 
+                            TimeSpan.Parse("0:00:00.00000000"));
+
+            // let's try larger numbers
+            Assert.AreEqual(TimeSpan.Parse("0:00:00.0123450"),
+                            TimeSpan.Parse("0:00:00.00123450"));
+            Assert.AreEqual(TimeSpan.Parse("0:00:00.0123450").Ticks,  123450);
+            Assert.AreEqual(TimeSpan.Parse("0:00:00.00123450").Ticks, 123450);
+
+            Assert.AreEqual(TimeSpan.Parse("0:00:00.0123456"),
+                            TimeSpan.Parse("0:00:00.00123456"));
+            Assert.AreEqual(TimeSpan.Parse("0:00:00.0123456").Ticks,  123456);
+            Assert.AreEqual(TimeSpan.Parse("0:00:00.00123456").Ticks, 123456);
 
         }
     }
