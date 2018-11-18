@@ -84,7 +84,7 @@ namespace TimeSpanParserUtil.Tests {
         [DataRow(7)]
         [DataRow(8)]
         [DataRow(9)]
-        public void TestPow10(int pow) {
+        public void Pow10Test(int pow) {
 
             long maths = (long)Math.Pow(10, pow);
             Assert.AreEqual(maths, Pow10(pow));
@@ -151,7 +151,7 @@ namespace TimeSpanParserUtil.Tests {
         [DataRow("000000000", true)]
         [DataRow("099999999", true)]
         [DataRow("000000000000", true)] // theoretically could be false
-        public void TestInvalidFraction(string numberText, bool expectedInvalid) {
+        public void InvalidFractionTest(string numberText, bool expectedInvalid) {
             int number = int.Parse(numberText);
             int leadingZeroes = numberText.Length - numberText.TrimStart('0').Length;
 
