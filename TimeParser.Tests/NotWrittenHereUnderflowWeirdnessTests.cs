@@ -8,7 +8,10 @@ namespace TimeSpanParserUtil.Tests {
     /// Called "Not Written Here" because this is only testing dotnet's System library, and does not run any other code from this project.
     /// Called "Underflow weirdness" with full awareness that they're technically still considered Overflows by technical smart people.
     /// 
-    /// If this test fails, Microsoft has fixed bugs in TimeSpan.Parse().
+    /// If this test fails, bugs in TimeSpan.Parse() have been patched.
+    /// 
+    /// I've submitted a patch to fix these issues: https://github.com/dotnet/corefx/pull/33581
+    /// 
     /// </summary>
     [TestClass]
     public class NotWrittenHereUnderflowWeirdnessTests {
@@ -71,7 +74,7 @@ namespace TimeSpanParserUtil.Tests {
         }
 
         /// <summary>
-        /// Double check the maths in  internal static long Pow10(int pow) 
+        /// Double check the maths in internal static long Pow10(int pow) 
         /// in https://github.com/dotnet/corefx/blob/master/src/Common/src/CoreLib/System/Globalization/TimeSpanParse.cs
         /// (It's fine.)
         /// </summary>
@@ -155,10 +158,49 @@ namespace TimeSpanParserUtil.Tests {
             int number = int.Parse(numberText);
             int leadingZeroes = numberText.Length - numberText.TrimStart('0').Length;
 
-            bool failedByRealTestToo = expectedInvalid != IsInvalidFractionOriginal(number, leadingZeroes);
+            bool failedByOriginalToo = expectedInvalid != IsInvalidFractionOriginal(number, leadingZeroes);
 
             var result = IsInvalidFractionPengo(number, leadingZeroes);
-            Assert.AreEqual(expectedInvalid, result, failedByRealTestToo ? "Also failed by original." : "But not failed by original");
+            Assert.AreEqual(expectedInvalid, result, failedByOriginalToo ? "Also failed by original." : "But not failed by original");
+        }
+
+        /// <summary>
+        /// IsInvalidFractio() from TimeSpanParse.cs (dotnet/corefx) has errors.
+        /// https://github.com/dotnet/corefx/blob/master/src/Common/src/CoreLib/System/Globalization/TimeSpanParse.cs
+        /// </summary>
+        /// <param name="numberText">A number found after the decimal place. The fractional unit of seconds.</param>
+        /// <param name="isReallyInvalid">For your reference only (ignored by test)</param>
+        /// <param name="originalThinksIsInvalid">What does the original IsInvalidFractio() code return for this? We'll test if it really does.</param>
+        [TestMethod]
+        // 1 digit is not invalid
+        [DataRow("1", false, false)]
+        [DataRow("0", false, false)]
+        // 7 digits is not invalid
+        [DataRow("0099999", false, false)] 
+        [DataRow("9999990", false, false)]
+        [DataRow("9999900", false, false)] 
+        // 8 digits all should be invalid
+        [DataRow("00000001", true, false)] // invalid but original thinks is not
+        [DataRow("10000000", true, true)]
+        [DataRow("10000001", true, true)]
+        [DataRow("00000098", true, false)] // invalid but original thinks is not
+        [DataRow("00000055", true, false)] // invalid but original thinks is not
+        [DataRow("00000098", true, false)] // invalid but original thinks is not
+        [DataRow("00000099", true, true)]  // original catches this one correctly
+        [DataRow("00000000", true, true)]  // all zeroes, so theoretically could be valid (i.e. false), but it's invalid and that's fair enough
+        // 9+ digits is right out
+        [DataRow("000000000", true, true)]
+        [DataRow("000000001", true, true)]
+        [DataRow("100000000", true, true)]
+        [DataRow("999999999", true, true)]
+        [DataRow("000000000000", true, true)] // theoretically could be valid (i.e. false)
+        public void IsInvalidFractionOriginalHasErrorsTest(string numberText, bool isReallyInvalid, bool originalThinksIsInvalid) {
+            int number = int.Parse(numberText);
+            int leadingZeroes = numberText.Length - numberText.TrimStart('0').Length;
+
+            var result = IsInvalidFractionOriginal(number, leadingZeroes);
+
+            Assert.AreEqual(result, originalThinksIsInvalid);
         }
 
         // used by private static bool TryTimeToTicks()
