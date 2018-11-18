@@ -69,5 +69,143 @@ namespace TimeSpanParserUtil.Tests {
             Assert.AreEqual(TimeSpan.Parse("0:00:00.00123456").Ticks, 123456);
 
         }
+
+        /// <summary>
+        /// Double check the maths in  internal static long Pow10(int pow) 
+        /// in https://github.com/dotnet/corefx/blob/master/src/Common/src/CoreLib/System/Globalization/TimeSpanParse.cs
+        /// (It's fine.)
+        /// </summary>
+        /// <param name="pow"></param>
+        [TestMethod]
+        [DataRow(0)]
+        [DataRow(1)]
+        [DataRow(2)]
+        [DataRow(6)]
+        [DataRow(7)]
+        [DataRow(8)]
+        [DataRow(9)]
+        public void TestPow10(int pow) {
+
+            long maths = (long)Math.Pow(10, pow);
+            Assert.AreEqual(maths, Pow10(pow));
+            Assert.AreEqual(Pow10(pow) * 10, Pow10(pow + 1));
+        }
+
+        internal static long Pow10(int pow) {
+            switch (pow) {
+                case 0: return 1;
+                case 1: return 10;
+                case 2: return 100;
+                case 3: return 1000;
+                case 4: return 10000;
+                case 5: return 100000;
+                case 6: return 1000000;
+                case 7: return 10000000;
+                default: return (long)Math.Pow(10, pow);
+            }
+        }
+
+
+        [TestMethod]
+        [DataRow("1", false)]
+        [DataRow("0", false)]
+        [DataRow("01", false)]
+        [DataRow("09", false)]
+        [DataRow("000001", false)]
+        [DataRow("000000", false)]
+        [DataRow("999999", false)]
+        [DataRow("9999999", false)]
+        [DataRow("0000000", false)]
+        [DataRow("0000001", false)]
+        [DataRow("1000000", false)]
+        [DataRow("1000001", false)]
+        [DataRow("0999999", false)]
+        [DataRow("0099999", false)]
+        [DataRow("9999990", false)]
+        [DataRow("9999900", false)]
+        [DataRow("00000000", true)] // all zeroes, theoretically could be false
+        [DataRow("00000001", true)]
+        [DataRow("10000000", true)]
+        [DataRow("10000001", true)]
+        [DataRow("00000098", true)]
+        [DataRow("00000055", true)]
+        [DataRow("00000099", true)]
+        [DataRow("00000550", true)]
+        [DataRow("00099999", true)]
+        [DataRow("00999999", true)]
+        [DataRow("09999999", true)]
+        [DataRow("00099000", true)]
+        [DataRow("99999999", true)]
+        [DataRow("10000000", true)]
+        [DataRow("01000000", true)]
+        [DataRow("00100000", true)]
+        [DataRow("00010000", true)]
+        [DataRow("00001000", true)]
+        [DataRow("00000100", true)]
+        [DataRow("00000010", true)]
+        [DataRow("00000001", true)]
+        [DataRow("000000000", true)]
+        [DataRow("000000001", true)]
+        [DataRow("100000000", true)]
+        [DataRow("999999999", true)]
+        [DataRow("000000000", true)]
+        [DataRow("099999999", true)]
+        [DataRow("000000000000", true)] // theoretically could be false
+        public void TestInvalidFraction(string numberText, bool expectedInvalid) {
+            int number = int.Parse(numberText);
+            int leadingZeroes = numberText.Length - numberText.TrimStart('0').Length;
+
+            bool failedByRealTestToo = expectedInvalid != IsInvalidFractionOriginal(number, leadingZeroes);
+
+            var result = IsInvalidFractionPengo(number, leadingZeroes);
+            Assert.AreEqual(expectedInvalid, result, failedByRealTestToo ? "Also failed by original." : "But not failed by original");
+        }
+
+        // used by private static bool TryTimeToTicks()
+        public static bool IsInvalidFractionOriginal(int _num, int _zeroes) {
+            //Debug.Assert(_num > -1);
+            const int MaxFraction = 9999999;
+            const int MaxFractionDigits = 7;
+
+            if (_num > MaxFraction || _zeroes > MaxFractionDigits)
+                return true;
+
+            if (_num == 0 || _zeroes == 0) // --- zeroes is here to avoid divide by zero but fails
+                return false;
+
+            // num > 0 && zeroes > 0 && num <= maxValue && zeroes <= maxPrecision
+            return _num >= MaxFraction / Pow10(_zeroes - 1);
+        }
+
+        // modified to not misbehave
+        public static bool IsInvalidFractionPengo(int _num, int _zeroes) {
+            //Debug.Assert(_num > -1);
+            const int MaxFraction = 9999999;
+            const int MaxFractionDigits = 7;
+
+            if (_num > MaxFraction || _zeroes > MaxFractionDigits)
+                return true;
+
+            if (_num == 0 || _zeroes == 0) 
+                return false;
+
+            Console.WriteLine($"num: {_num}, digits: {_num.ToString().Length}, zeroes:{_zeroes}");
+
+            Console.WriteLine("Working of old algorithm:");
+            Console.WriteLine($"_num = {_num} >= {MaxFraction} / Pow10({_zeroes} - 1)");
+            Console.WriteLine($"_num = {_num} >= {MaxFraction} / Pow10({_zeroes - 1})");
+            Console.WriteLine($"_num = {_num} >= {MaxFraction} / {Pow10(_zeroes - 1)}");
+            Console.WriteLine($"_num = {_num} >= {MaxFraction / Pow10(_zeroes - 1)}");
+            Console.WriteLine();
+            Console.WriteLine("Working of new algorithm:");
+            Console.WriteLine($"_num = {_num} >= {MaxFraction} / Pow10({_zeroes})");
+            Console.WriteLine($"_num = {_num} >= {MaxFraction} / {Pow10(_zeroes)}");
+            Console.WriteLine($"_num = {_num} >= {MaxFraction / Pow10(_zeroes)}");
+
+            return _num > MaxFraction  / Pow10(_zeroes);
+        }
+
     }
+
+
 }
