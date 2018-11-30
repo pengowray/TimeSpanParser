@@ -63,7 +63,9 @@ namespace TimeSpanParserUtil
         public bool AllowUnitlessZero = true;
 
         // if true, units which are too small will cause an OverflowException. E.g. 1 nanosecond (which is 100x smaller than the smallest unit, a tick).
-        public bool ErrorOnTooSmallOutOfRange = true;
+        //public bool ErrorOnTooSmallOutOfRange = true; 
+        //TODO: options: Overflow if any element is too smaller; Overflow if entire TimeSpan is too small; Round to zero
+        //TODO: same for overflow of too large elements 
 
         //TODO: options as binary flags?
 
