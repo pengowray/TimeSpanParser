@@ -1,11 +1,9 @@
 ﻿using System;
 using System.Linq;
 using System.Collections.Generic;
-using System.Text;
 using System.Numerics;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using TimeSpanParserUtil;
 
 namespace TimeSpanParserUtil.Tests {
 
@@ -14,9 +12,9 @@ namespace TimeSpanParserUtil.Tests {
 
         //static int MAX_TEXT = 1_000_000_001; // 25 minutes? / crash
         static int MAX_TEXT = 100_000_001; // 35 sec
-        //static int MAX_TEXT = 10_000_001; // 2 sec
-        //static int MAX_TEXT = 1_000_001; // 280ms
-        //static int MAX_TEXT = 100_001; // 
+        //static int MAX_TEXT = 10_000_001; // 3 sec
+        //static int MAX_TEXT = 1_000_001; // 384ms
+        //static int MAX_TEXT = 100_001; // 59ms
 
         [TestMethod]
         [DataRow("0.{0}1", '0')]
@@ -133,6 +131,8 @@ namespace TimeSpanParserUtil.Tests {
                         n = 10;
                     } else if (n < 100) {
                         n = 100;
+                    } else if (n < 1000) {
+                        n = 1000;
                     } else {
                         n = n * 10;
                     }
