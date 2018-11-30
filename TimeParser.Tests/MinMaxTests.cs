@@ -248,6 +248,26 @@ namespace TimeSpanParserUtil.Tests {
             }
         }
 
+        [TestMethod]
+        [DataRow("Inf:00:00")]
+        [DataRow("-Inf:00:00")]
+        [DataRow("10:-Inf:00")]
+        [DataRow("10:00:Inf")]
+        [DataRow("10:00:.Inf")]
+        [DataRow("10:00:.-Inf")]
+        [DataRow("10:NaN:00")]
+        [DataRow("10 Inf seconds")]
+        [DataRow("Inf seconds")]
+        [DataRow("-Inf seconds")]
+        [DataRow("NaN seconds")]
+        public void NotANumberInfinityTest(string parseThis) {
+            TimeSpanParser.TryParse(parseThis, out var timeSpan); // only for displaying in the error
+
+            Assert.ThrowsException<ArgumentException>(() => TimeSpanParser.Parse(parseThis), 
+                $"Maybe random strings in the middle of a time should raise exceptions. {parseThis} parsed as: '{timeSpan}'");
+        }
+
+
         // "The smallest unit of time is the tick, which is equal to 100 nanoseconds or one ten-millionth of a second. There are 10,000 ticks in a millisecond."
         // -- https://msdn.microsoft.com/en-us/library/system.timespan.ticks(v=vs.110).aspx
         // "ff - Optional fractional seconds, consisting of one to seven decimal digits."

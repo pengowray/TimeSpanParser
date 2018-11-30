@@ -35,40 +35,40 @@ namespace TimeSpanParserUtil.Tests {
                             TimeSpan.Parse("0:00:00.000000001"));
 
             // Let's try some more combinations
-            Assert.AreEqual(TimeSpan.Parse("0:00:00.0000005" ).Ticks, 5);   // Passes correctly
+            Assert.AreEqual(TimeSpan.Parse("0:00:00.0000005").Ticks, 5);   // Passes correctly
             Assert.AreEqual(TimeSpan.Parse("0:00:00.00000005").Ticks, 5);   // Passes but shouldn't. Expected: 0, 1 or OverflowException
             Assert.AreEqual(TimeSpan.Parse("0:00:00.00000050").Ticks, 50);  // Passes but shouldn't. Expected: 5 or OverflowException
             Assert.AreEqual(TimeSpan.Parse("0:00:00.00000055").Ticks, 55);  // Passes but shouldn't. Expected: 5, 6 or OverflowException
-            Assert.AreEqual(TimeSpan.Parse("0:00:00.0000055").Ticks,  55);  // Passes correctly
+            Assert.AreEqual(TimeSpan.Parse("0:00:00.0000055").Ticks, 55);  // Passes correctly
             Assert.AreEqual(TimeSpan.Parse("0:00:00.00000550").Ticks, 550); // Passes but shouldn't
 
             // Just reiterating, 5,500 ns == 55,000 ns
-            Assert.AreEqual(TimeSpan.Parse("0:00:00.00000055"), 
+            Assert.AreEqual(TimeSpan.Parse("0:00:00.00000055"),
                             TimeSpan.Parse("0:00:00.0000055"));
 
             // Still passes and still shouldn't
             Assert.AreEqual(TimeSpan.Parse("0:00:00.00000098").Ticks, 98);
 
             // Uniquely, but correctly (perhaps), causes an overflow
-            Assert.ThrowsException<OverflowException>(() => 
+            Assert.ThrowsException<OverflowException>(() =>
                             TimeSpan.Parse("0:00:00.00000099"));
 
             // Passes correctly (7 fractional zeroes)
             Assert.AreEqual(TimeSpan.Parse("0:00:00.0000000"), TimeSpan.Zero);
 
             // Needlessly overflows (8 fractional zeroes)
-            Assert.ThrowsException<OverflowException>(() => 
+            Assert.ThrowsException<OverflowException>(() =>
                             TimeSpan.Parse("0:00:00.00000000"));
 
             // let's try larger numbers
             Assert.AreEqual(TimeSpan.Parse("0:00:00.0123450"),
                             TimeSpan.Parse("0:00:00.00123450"));
-            Assert.AreEqual(TimeSpan.Parse("0:00:00.0123450").Ticks,  123450);
+            Assert.AreEqual(TimeSpan.Parse("0:00:00.0123450").Ticks, 123450);
             Assert.AreEqual(TimeSpan.Parse("0:00:00.00123450").Ticks, 123450);
 
             Assert.AreEqual(TimeSpan.Parse("0:00:00.0123456"),
                             TimeSpan.Parse("0:00:00.00123456"));
-            Assert.AreEqual(TimeSpan.Parse("0:00:00.0123456").Ticks,  123456);
+            Assert.AreEqual(TimeSpan.Parse("0:00:00.0123456").Ticks, 123456);
             Assert.AreEqual(TimeSpan.Parse("0:00:00.00123456").Ticks, 123456);
 
         }
@@ -176,9 +176,9 @@ namespace TimeSpanParserUtil.Tests {
         [DataRow("1", false, false)]
         [DataRow("0", false, false)]
         // 7 digits is not invalid
-        [DataRow("0099999", false, false)] 
+        [DataRow("0099999", false, false)]
         [DataRow("9999990", false, false)]
-        [DataRow("9999900", false, false)] 
+        [DataRow("9999900", false, false)]
         // 8 digits all should be invalid
         [DataRow("00000001", true, false)] // invalid but original thinks is not
         [DataRow("10000000", true, true)]
@@ -228,7 +228,7 @@ namespace TimeSpanParserUtil.Tests {
             if (_num > MaxFraction || _zeroes > MaxFractionDigits)
                 return true;
 
-            if (_num == 0 || _zeroes == 0) 
+            if (_num == 0 || _zeroes == 0)
                 return false;
 
             Console.WriteLine($"num: {_num}, digits: {_num.ToString().Length}, zeroes:{_zeroes}");
@@ -244,10 +244,25 @@ namespace TimeSpanParserUtil.Tests {
             Console.WriteLine($"_num = {_num} >= {MaxFraction} / {Pow10(_zeroes)}");
             Console.WriteLine($"_num = {_num} >= {MaxFraction / Pow10(_zeroes)}");
 
-            return _num > MaxFraction  / Pow10(_zeroes);
+            return _num > MaxFraction / Pow10(_zeroes);
+        }
+
+
+        [TestMethod]
+        public void Bug32907Test() {
+            //TryParse should never throw an exception, but it does
+            Assert.ThrowsException<ArgumentOutOfRangeException>(() => DateTime.TryParse("9999-12-31T23:59:59.99999999Z", out var dateTime)); ;
+        }
+
+        [TestMethod]
+        public void Bug32907TruncationTest() {
+            //TODO: when above is fixed, check if the final 9 is truncated
+
+            //var dateTime8 = DateTime.Parse("9999-12-31T23:59:59.99999999Z");
+            //var dateTime7 = DateTime.Parse("9999-12-31T23:59:59.9999999Z");
+
+            //Assert.AreEqual(dateTime8, dateTime7, "Final 9 is not truncated");
         }
 
     }
-
-
 }

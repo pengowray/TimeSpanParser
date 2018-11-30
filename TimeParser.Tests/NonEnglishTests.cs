@@ -8,7 +8,7 @@ using TimeSpanParserUtil;
 namespace TimeSpanParserUtil.Tests {
 
     [TestClass]
-    class NonEnglishTests
+    public class NonEnglishTests
     {
         [TestMethod]
         public void NonEnglishDehumanizeTimeSpanSK() {
