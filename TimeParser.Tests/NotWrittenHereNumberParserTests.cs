@@ -11,10 +11,10 @@ namespace TimeSpanParserUtil.Tests {
     public class NotWrittenHereNumberParserTests {
 
         //static int MAX_TEXT = 1_000_000_001; // 25 minutes? / crash
-        static int MAX_TEXT = 100_000_001; // 35 sec
+        //static int MAX_TEXT = 100_000_001; // 35 sec
         //static int MAX_TEXT = 10_000_001; // 3 sec
         //static int MAX_TEXT = 1_000_001; // 384ms
-        //static int MAX_TEXT = 100_001; // 59ms
+        static int MAX_TEXT = 100_001; // 59ms
 
         [TestMethod]
         [DataRow("0.{0}1", '0')]
@@ -160,6 +160,8 @@ namespace TimeSpanParserUtil.Tests {
         [DataRow("0.{0}", '2')]
         [DataRow("0.{0}", '5')]
         [DataRow("1.{0}", '5')]
+        [DataRow("0.{0}", '6')]
+        [DataRow("0.{0}", '8')]
         [DataRow("0.{0}", '9')]
         [DataRow("{0}1.1", '0')]
         [DataRow("2.2{0}", '0')]

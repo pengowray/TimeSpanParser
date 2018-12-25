@@ -220,7 +220,6 @@ namespace TimeSpanParserUtil {
 
             return null;
         }
-
         protected static bool DoParseMutliple(string text, out TimeSpan[] timeSpans, TimeSpanParserOptions options = null, int max = int.MaxValue) {
             if (options == null)
                 options = new TimeSpanParserOptions(); //TODO: default options object
@@ -369,7 +368,7 @@ namespace TimeSpanParserUtil {
                 if (last != null) {
                     bool success = last.TryMerge(token, out ParserToken newToken);
                     if (!success)
-                        throw new ArgumentException("failed to parse. probably because of a unitless number.");
+                        throw new ArgumentException("Failed to parse. Probably because of a unitless number.");
 
                     if (newToken == null) {
                         timespans.Add(last.ToTimeSpan());
