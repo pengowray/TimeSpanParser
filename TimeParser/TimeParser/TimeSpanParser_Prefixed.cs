@@ -71,7 +71,7 @@ namespace TimeSpanParserUtil {
             // must be in (brackets) to be included in results of regex split
             // @"?<keyword>"; // name group
             string pattern = @"\b(" + string.Join("|", wordsList.Select(word => Regex.Escape(word))) + @")\b";
-            var regex = new Regex(pattern.ToString(), RegexOptions.IgnoreCase & RegexOptions.IgnorePatternWhitespace);
+            var regex = new Regex(pattern.ToString(), RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace);
             string[] parts = regex.Split(text);
             //Console.WriteLine("pattern: " + pattern.ToString());
             //Console.WriteLine(string.Join("//", parts));
@@ -98,10 +98,10 @@ namespace TimeSpanParserUtil {
 
                     } else {
                         if (DoParseMutliple(part, out TimeSpan[] timespans, options)) {
-
+                            
                             for (int j = 0; j < timespans.Length; j++) {
-                                string prefix = currentPrefix 
-                                    ?? (specialColonPrefix && part.TrimStart().StartsWith(":") && !matches.ContainsKey(":") ? ":" : null) // use ":" as the prefix name under special circumstances .. note/bug: only works for the first timespan if there's multiple in a row. TODO
+                                string prefix = currentPrefix
+                                    ?? (specialColonPrefix && j == 0 && part.TrimStart().StartsWith(":") && !matches.ContainsKey(":") ? ":" : null) // use ":" as the prefix name under special circumstances .. note/bug: only works for the first timespan (j==0), if there's multiple in a row. TODO
                                     ?? nonkeywordCounter++.ToString();
 
                                 matches[prefix] = timespans[j];
