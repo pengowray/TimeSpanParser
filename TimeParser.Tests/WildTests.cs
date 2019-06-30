@@ -34,7 +34,7 @@ namespace TimeSpanParserUtil.Tests {
         [DataRow("9,130.9 days, 219,141 hours, 13,148,477 minutes, 788,908,652 seconds", 36_523, 13, 10, 32, 0)] // ~100 years. (full version in FutureWildTests)
         [DataRow("365 days, 5 hours, 48 minutes, and 46 seconds", 365, 5, 48, 46, 0)] // one year is... (via NASA)
         [DataRow("365.2422 days", 365, 5, 48, 46, 80)] // one year is... (via NASA): note: 80ms longer than the above. https://en.wikipedia.org/wiki/Tropical_year gives a bunch of other figures
-        [DataRow("28 days, 6 hours, 42 minutes, and 12 seconds", 28, 6, 42, 12)] // Frank
+        [DataRow("28 days, 6 hours, 42 minutes, and 12 seconds", 28, 6, 42, 12, 0)] // Frank
         public void WildSeenTests(string parseThis, int days, int hours, int minutes, int seconds, int milliseconds) {
             var expected = new TimeSpan(days, hours, minutes, seconds, milliseconds);
             TimeSpan actual = TimeSpanParser.Parse(parseThis);

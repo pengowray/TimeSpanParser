@@ -70,7 +70,13 @@ namespace TimeSpanParserUtil {
 
             // must be in (brackets) to be included in results of regex split
             // @"?<keyword>"; // name group
-            string pattern = @"\b(" + string.Join("|", wordsList.Select(word => Regex.Escape(word))) + @")\b";
+            //string start = @"(?:\b|_\K|[0-9]\K)"; // was: @"\b" but want to use numbers as boundaries too
+            //string end = @"(?=\b|_|[0-9])"; // was: @"\b"
+            string start = @"(?<=\b|_|[0-9])"; // was: @"\b" but want to use numbers as boundaries too
+            string end = @"(?=\b|_|[0-9])"; // was: @"\b"
+
+            string pattern = start + @"(" + string.Join("|", wordsList.Select(word => Regex.Escape(word))) + @")" + end;
+            
             var regex = new Regex(pattern.ToString(), RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace);
             string[] parts = regex.Split(text);
             //Console.WriteLine("pattern: " + pattern.ToString());
