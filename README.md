@@ -16,15 +16,16 @@ TimeSpanParser accepts a number of formats, such as
 * Can round-trip English expressions from [TimeSpan.Humanizer()](https://github.com/Humanizr/Humanizer)
 * Sane, permissive defaults for unambiguous input, but many options to fine tune if you really want.
 * By changing the default options, you can change the expected units, e.g. you can have it treat a bare input of "5" as "5 minutes" instead of throwing an exception; or treat "3:22" as 3m22s instead of the default which would be the equivalent of 3h22m.
-* Will parse "0 years" and "0 months" unambiguously, as such inputs won't change in meaning even on a leap day during a leap year.
+* Will parse "0 years" and "0 months" unambiguously, as such inputs won't change in meaning even on a leap day during a leap year. Other values for years/months are not currently accepted.
 * Many, many unit tests—many of which pass!
 * Returns a [`TimeSpan`](https://docs.microsoft.com/en-us/dotnet/api/system.timespan?view=netcore-2.1) (struct), so shares its limitations — min/max value: [approx ±10 million days](https://docs.microsoft.com/en-us/dotnet/api/system.timespan.maxvalue?view=netcore-2.1). Smallest unit: 100 nanoseconds (aka "[1 microsoft tick](https://docs.microsoft.com/en-us/dotnet/api/system.timespan.ticks?view=netcore-2.1)". There are 10 million [ticks per second](https://docs.microsoft.com/en-us/dotnet/api/system.timespan.tickspersecond?view=netcore-2.1)).
 
 **Help needed**
+
 PRs welcome. If you find any input TimeSpanParser.Parse(string) does not parse correctly, especially if it differs from `TimeSpan.Parse(string)`, then please create a new issue or add a unit test.
 
 See also:
-* Quole's post with the [original concept and motivation](https://github.com/Humanizr/Humanizer/issues/691) for TimeSpanParser.
-* [QuickGuide.cs](https://github.com/quole/TimeSpanParser/blob/master/TimeParser.Tests/QuickGuide.cs) — Read through the comments for a tour of the more advanced usage and options. This UnitTest is written as a tutorial.
-* [WildTests.cs](https://github.com/quole/TimeSpanParser/blob/master/TimeParser.Tests/WildTests.cs) — Examples of timespans found in the wild.
-* [To-do list](https://github.com/quole/TimeSpanParser/wiki/Todo) (Wiki)
+* PengoWray's post with the [original concept and motivation](https://github.com/Humanizr/Humanizer/issues/691) for TimeSpanParser.
+* [QuickGuide.cs](https://github.com/pengowray/TimeSpanParser/blob/master/TimeParser.Tests/QuickGuide.cs) — Read through the comments for a tour of the more advanced usage and options. This UnitTest is written as a tutorial.
+* [WildTests.cs](https://github.com/pengowray/TimeSpanParser/blob/master/TimeParser.Tests/WildTests.cs) — Examples of timespans found in the wild.
+* [To-do list](https://github.com/pengowray/TimeSpanParser/wiki/Todo) (Wiki)
