@@ -11,6 +11,21 @@ namespace tcalc.Parsing
             Numerics.Decimal
                 .Then(_ => Span.WithAll(char.IsLetter));
 
+ 
+        /*
+        static TextParser<Unit> DurationTest{ get; } =
+            from number in Numerics.Decimal
+            from optionalSpace in Span.WhiteSpace
+                .IgnoreMany()
+                .Optional()
+            from units in Character(letters)
+                //.Value(Unit.Value)
+                //.IgnoreMany()
+            from close in Character.EqualTo('"')
+            select Unit.Value;
+        */
+
+
         static Tokenizer<ExpressionToken> Tokenizer { get; } = new TokenizerBuilder<ExpressionToken>()
             .Match(Character.EqualTo('+'), ExpressionToken.Plus)
             .Match(Character.EqualTo('-'), ExpressionToken.Minus)

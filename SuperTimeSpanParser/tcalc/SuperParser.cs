@@ -18,9 +18,10 @@ namespace SuperTimeSpanParser.tcalc {
                 return null;
             }
             
-            var success = (!ExpressionParser.TryParse(tokens.Value, out var expr, out var error, out var errorPosition)) ;
+            var success = ExpressionParser.TryParse(tokens.Value, out var expr, out var error, out var errorPosition) ;
 
-            if (!success) {
+            if (success) {
+                
                 var result = ExpressionEvaluator.Evaluate(expr);
                 if (result is DurationResult)
                     return ((DurationResult)result).Value;
@@ -29,6 +30,10 @@ namespace SuperTimeSpanParser.tcalc {
                 Console.WriteLine("no success: " + result);
                 return null;
             }
+
+            // FIXME: expr will be null now (if not success) so this is all dead code. 
+            // Might be useful reference / restructuring above
+            // (from ExpressionEvaluator.Evaluate)
 
             Expression expression = expr;
 
