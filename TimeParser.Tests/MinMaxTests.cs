@@ -272,15 +272,20 @@ namespace TimeSpanParserUtil.Tests {
         // -- https://msdn.microsoft.com/en-us/library/system.timespan.ticks(v=vs.110).aspx
         // "ff - Optional fractional seconds, consisting of one to seven decimal digits."
         // -- https://docs.microsoft.com/en-us/dotnet/api/system.timespan.parse?redirectedfrom=MSDN&view=netcore-2.1#System_TimeSpan_Parse_System_String_
-        //TODO: separate out overflow weirdness and TimeSpanParser overflow tests
+
+        // Decimals with 8 digits are buggy in .NET Core 2.x. 
+        // Reported and discussed in much detail here:
+        // https://github.com/dotnet/coreclr/pull/21077
+        // It was fixed for .Net Core 3.0:
+        // https://github.com/dotnet/coreclr/pull/21968
         [TestMethod]
         [DataRow("    100000 ps", "0:00:00.0000001", 1, true)]    // ok
-        [DataRow("     10000 ps", "0:00:00.00000001", 0, false)]  // ought to overflow but instead TimeSpan.Parse() returns 1 tick
+        [DataRow("     10000 ps", "0:00:00.00000001", 0, false)]  // ought to "overflow" or truncate to zero, but instead TimeSpan.Parse() returns 1 tick
         [DataRow("      1000 ps", "0:00:00.000000001", 0, false)] // overflow
 
-        [DataRow("       100 ns", "0:00:00.0000001", 1, true)]    // ok
-        [DataRow("        10 ns", "0:00:00.00000001", 0, false)]  // ought to overflow
-        [DataRow("        90 ns", "0:00:00.00000009", 0, false)]  // TimeSpan.Parse() overflows correctly
+        [DataRow("       100 ns", "0:00:00.0000001", 1, true)]    // ok 
+        [DataRow("        10 ns", "0:00:00.00000001", 0, false)]  // ought to overflow (or truncate to zero) 
+        [DataRow("        90 ns", "0:00:00.00000009", 0, false)]  // TimeSpan.Parse() overflows as expected
         [DataRow("         1 ns", "0:00:00.000000001", 0, false)] // overflow
 
         [DataRow("        .1 μs", "0:00:00.0000001", 1, true)]    // ok
