@@ -1,4 +1,6 @@
-**TimeSpanParser** parses human-written and natural language time span strings. For example:
+# TimeSpanParser [![](https://img.shields.io/nuget/v/TimeSpanParserUtil)](https://www.nuget.org/packages/TimeSpanParserUtil/)
+
+> **TimeSpanParser** parses human-written and natural language time span strings. For example:
 
 `TimeSpanParser.Parse("5 mins")`
 
